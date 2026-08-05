@@ -64,7 +64,9 @@ DEMO = {
     "id": "try",
     "heading": "One stroke, one character",
     "intro": [
-        "This is not a video. It is a working Cangjie input method running inside your browser. **Drag one stroke across the radicals** and it spells the whole code: keys you clip on the way are skipped, and a finger that wanders still lands — which is the point of KOI. Tapping works too, and on a laptop you can type on your own keyboard.",
+        "The Cangjie code for 香 is h, d, a — the radicals 竹, 木, 日. The usual way to enter it is three presses.",
+        "**In KOI you drag from h to a in one stroke.** The drag has to cross g, f and s on the way, and KOI knows those are not the radicals you meant. A finger that wanders still lands.",
+        "What follows is not a video. It is a working Cangjie input method running inside your browser. Tapping key by key works too, and on a laptop you can type on your own keyboard.",
     ],
     "tries_label": "Strokes worth trying",
     "tries": (
@@ -108,8 +110,9 @@ LANDING = {
             "kind": "scene",
             "id": "input-methods",
             "index": "01",
-            "heading": "Five input methods, one keyboard",
-            "lead": "No more cycling through the system keyboard list just to change input method. All five modes live inside KOI, and switching is instant.",
+            "moment": "Some people type Cangjie, some type Quick, some type Jyutping; anyone who grew up in Taiwan types Zhuyin. Moving between them usually means installing several keyboards and cycling through the system list.",
+            "heading": "One keyboard, five input methods",
+            "lead": "All five modes live inside KOI, and switching is instant. You never leave this keyboard.",
             "points": [
                 {"title": "Cangjie", "body": "The native key layout, with every keycap showing its English letter and its Cangjie radical together. Candidates are ordered by frequency, and the ones you pick often move towards the front."},
                 {"title": "Quick", "body": "First-and-last-code input, on the same key layout as Cangjie. There are no new key positions to learn."},
@@ -143,7 +146,8 @@ LANDING = {
             "kind": "scene",
             "id": "feel",
             "index": "02",
-            "heading": "Type your way, not the keyboard's",
+            "moment": "A finger dragged across six inches of glass does not land the same way twice.",
+            "heading": "It reads the stroke you meant",
             "lead": "Tap, glide, mix the two, chord with two fingers — all four can be mixed inside a single composition. Change your mind halfway through and you do not have to clear it and start again.",
             "points": [
                 {"title": "Glides that drift", "body": "Decoding tolerates up to two keys being substituted by a neighbouring key. A finger that wanders slightly does not derail the input."},
@@ -154,8 +158,9 @@ LANDING = {
         {
             "kind": "ink",
             "id": "handwriting",
-            "heading": "Writing on water",
+            "heading": "When there is no signal",
             "intro": [
+                "You are underground, the signal comes and goes, and the character you want is one you cannot decompose. The handwriting model is bundled inside the app — no download, no connection, nothing that waits on a signal.",
                 "KOI's handwriting area is rendered in Metal as a pool of water: your strokes leave ripples, refraction and waves. The panel below borrows the same ink: the colour under your finger here is the one the keyboard draws when you glide.",
             ],
             "canvas_label": "A water surface you can write on",
@@ -168,8 +173,9 @@ LANDING = {
             "kind": "scene",
             "id": "agent",
             "index": "03",
-            "heading": "AI that is only there when you want it",
-            "lead": "Six modes, all handled on the keyboard, without jumping out to another app. Leave it closed and it is simply not there.",
+            "moment": "A message comes in. You read it three times and still have no idea what to write back.",
+            "heading": "AI that turns up only when you ask",
+            "lead": "Nothing to copy, nowhere to jump to. Six modes, all handled on the keyboard — leave it closed and it is simply not there.",
             "points": [
                 {"title": "Auto", "body": "Reads what you have in front of you and decides what to do."},
                 {"title": "Ask", "body": "Ask directly, and insert the answer straight into the field."},
@@ -184,7 +190,8 @@ LANDING = {
             "id": "privacy",
             "index": "04",
             "tone": "accent",
-            "heading": "The typing engine has no networking code",
+            "moment": "A keyboard is the one place every word you write has to pass through. Why would you trust one?",
+            "heading": "So the typing engine never goes online",
             "lead": [
                 "KOI's input engine — candidate generation, code decomposition, learning history — contains no networking code at all. **What you type does not leave your device.**",
             ],
@@ -201,8 +208,9 @@ LANDING = {
             "id": "plus",
             "index": "05",
             "tone": "quiet",
-            "heading": "KOI Plus",
-            "lead": "The free version already includes all five input methods, handwriting, learning and every core typing feature. Plus adds two more, along with a monthly allowance of Credits.",
+            "moment": "You move to a new phone, and a year of learned habits stays behind on the old one.",
+            "heading": "Your habits come with you",
+            "lead": "Cross-device sync is one of the two things KOI Plus adds. The free version already includes all five input methods, handwriting, learning and every core typing feature; Plus adds predictive input and sync, along with a monthly allowance of Credits.",
             "points": [
                 {"title": "Predictive input", "body": "After a character is committed, KOI offers the next word or a whole phrase, so there are fewer characters to decompose one by one."},
                 {"title": "Cross-device sync", "body": "Settings and learning history sync through your own private iCloud. Off by default, and once it is on you trigger it yourself."},
@@ -214,8 +222,9 @@ LANDING = {
             "id": "requirements",
             "index": "06",
             "tone": "quiet",
+            "moment": "Installing the app does not put the keyboard on your screen — iOS does not let a third-party keyboard do that by itself.",
             "heading": "Getting started",
-            "lead": "KOI needs iOS 16.0 or later. Once it is on the App Store, setup is one step: add the keyboard in iOS Settings.",
+            "lead": "You add the keyboard in iOS Settings, once. KOI needs iOS 16.0 or later.",
             "points": [
                 {"title": "Full Access", "body": "Needed only for the AI features and pasting from the clipboard. Without it, all five input methods, candidates, learning and handwriting keep working."},
                 {"title": "Character coverage", "body": "Candidates cover the Han characters in the Basic Multilingual Plane (BMP)."},

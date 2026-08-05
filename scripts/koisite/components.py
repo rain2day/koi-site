@@ -295,6 +295,12 @@ def _scene(section: dict, context: RenderContext) -> str:
     if section.get("eyebrow"):
         parts.append(f'<p class="eyebrow">{inline(section["eyebrow"], context)}</p>')
 
+    # The situation the heading answers. A feature list tells you what something
+    # does; putting the moment first tells you why you would want it, and turns
+    # the heading from a label into a reply.
+    if section.get("moment"):
+        parts.append(f'<p class="scene-moment">{inline(section["moment"], context)}</p>')
+
     heading = section["heading"]
     anchor = section.get("id")
     if anchor:

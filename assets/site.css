@@ -1017,6 +1017,17 @@ figcaption {
   color: var(--koi);
 }
 
+/* The setup line. Quieter and looser than the heading it introduces, so the
+   eye reads it as a voice rather than as a second title. */
+.scene-moment {
+  max-width: 34rem;
+  margin: 0 0 1.1rem;
+  color: var(--dim);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
 .scene h2 {
   margin: 0 0 1.4rem;
   font-size: clamp(2rem, 5.2vw, 3.4rem);
