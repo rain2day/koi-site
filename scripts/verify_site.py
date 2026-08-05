@@ -28,6 +28,9 @@ ROUTES = ("", "privacy/", "support/", "terms/")
 LOCALES = (("zh-Hant", ""), ("en", "en/"))  # (html lang, path prefix)
 FORBIDDEN = ("http://", "google-analytics", "googletagmanager", "<iframe", "<form")
 ALLOWED_SCRIPT_TYPE = "application/ld+json"
+# Vendored third-party libraries. Exempt from the network-API scan only; see
+# check_module_sources for why that is safe and what still applies to them.
+VENDOR_PREFIX = "assets/vendor/"
 
 # The site runs one first-party script: the Cangjie typing demo. That is a
 # deliberate exception to "no JavaScript", and it is only safe because the
@@ -263,8 +266,21 @@ def check_module_sources(root: Path, modules: set[str]) -> None:
     is the check that keeps that sentence true as the code changes: a module
     that grows a fetch call, or starts writing localStorage, fails the deploy.
 
-    Imports are followed, so a helper module cannot dodge the scan by not being
-    referenced from HTML directly.
+    Both static and dynamic imports are followed, so a helper module cannot dodge
+    the scan by not being referenced from HTML directly. Dynamic imports matter
+    here specifically: the pond is loaded with ``import()`` so that a visitor who
+    cannot use it never downloads it, and following only static imports would
+    have left the whole graph behind that call unscanned.
+
+    Vendored third-party code is exempt from the API scan, and only from that.
+    A minified library carries loader paths its consumer never calls, so the
+    substring scan reports things that cannot happen — three.core.min.js
+    contains one ``fetch(`` in code this site does not reach. The guarantee is
+    not weakened by the exemption, because it does not rest on this scan: every
+    page ships ``connect-src 'none'``, which the browser enforces against all
+    code on the page, reachable or not. The exemption is narrow on purpose: the
+    file must still exist, must still be same-origin and relative, and must
+    still be free of insecure URLs.
     """
     pending = list(modules)
     scanned: set[str] = set()
@@ -278,15 +294,20 @@ def check_module_sources(root: Path, modules: set[str]) -> None:
         check(path.is_file(), module, "script referenced but missing")
         source = path.read_text(encoding="utf-8")
 
-        for api in NETWORK_APIS:
-            check(
-                api not in source,
-                module,
-                f"uses {api!r}; the demo must not reach the network or persist visitor state",
-            )
+        if not module.startswith(VENDOR_PREFIX):
+            for api in NETWORK_APIS:
+                check(
+                    api not in source,
+                    module,
+                    f"uses {api!r}; the demo must not reach the network or persist visitor state",
+                )
         check("http://" not in source, module, "contains an insecure http:// URL")
 
-        for match in re.finditer(r"""^\s*(?:import|export)\b[^;\n]*?from\s+["']([^"']+)["']""", source, re.M):
+        static = re.finditer(
+            r"""^\s*(?:import|export)\b[^;\n]*?from\s+["']([^"']+)["']""", source, re.M
+        )
+        dynamic = re.finditer(r"""\bimport\s*\(\s*["']([^"']+)["']\s*\)""", source)
+        for match in (*static, *dynamic):
             target = match.group(1)
             check(
                 target.startswith("."),

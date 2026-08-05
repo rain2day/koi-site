@@ -70,6 +70,17 @@ def relative_link_in_404(root: Path) -> None:
     edit(root, "404.html", 'href="/privacy/"', 'href="./privacy/"')
 
 
+def api_behind_dynamic_import(root: Path) -> None:
+    """A module reachable only through ``import()`` must still be scanned.
+
+    The pond is loaded dynamically so that a visitor who cannot use it never
+    downloads it. A gate that followed only static imports would never look at
+    it, or at anything it pulls in.
+    """
+    edit(root, "assets/pond.js", "const MAX_DROPS = 8;",
+         "const MAX_DROPS = 8;\nsessionStorage.setItem('seen', '1');")
+
+
 def insecure_url(root: Path) -> None:
     edit(root, "en/terms/index.html", "https://reportaproblem.apple.com",
          "http://reportaproblem.apple.com")
@@ -140,6 +151,7 @@ CASES = {
     "stylesheet href must resolve": broken_stylesheet,
     "no embedded forms": embedded_form,
     "CSP connect-src must be 'none'": loosen_csp,
+    "modules reached only by dynamic import are scanned": api_behind_dynamic_import,
 }
 
 
