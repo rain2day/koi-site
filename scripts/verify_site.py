@@ -1,97 +1,339 @@
 #!/usr/bin/env python3
+"""Deploy gate for the KOI public website.
+
+Runs in GitHub Actions (``.github/workflows/pages.yml``) as
+``python3 scripts/verify_site.py .`` before the Pages artifact is assembled.
+It enforces the production contract for the rendered, bilingual static site:
+the exact set of documents and their ``<html lang>`` / canonical / hreflang
+metadata, the privacy-first script and forbidden-substring policy, that every
+internal link uses the addressing scheme its document requires, that every
+link/stylesheet/icon/image resolves to a file that actually exists, and the
+sitemap/robots contract. Standard library only. Any violation raises a clear
+message naming the offending file and value, and the process exits non-zero.
+"""
+
 from __future__ import annotations
 
+from dataclasses import dataclass
 from html.parser import HTMLParser
-from pathlib import PurePosixPath
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import posixpath
 import sys
 import xml.etree.ElementTree as ET
 
 ORIGIN = "https://koi.rainsday.com"
-REQUIRED_HTML = {
-    "index.html": f"{ORIGIN}/",
-    "privacy/index.html": f"{ORIGIN}/privacy/",
-    "support/index.html": f"{ORIGIN}/support/",
-    "terms/index.html": f"{ORIGIN}/terms/",
-    "404.html": f"{ORIGIN}/404.html",
-}
-SITE_ROOTS = {
-    "index.html": "./",
-    "privacy/index.html": "../",
-    "support/index.html": "../",
-    "terms/index.html": "../",
-    "404.html": "./",
-}
-NAVIGATION_TARGETS = {
-    "": "index.html",
-    "privacy/": "privacy/index.html",
-    "support/": "support/index.html",
-    "terms/": "terms/index.html",
-}
+ROUTES = ("", "privacy/", "support/", "terms/")
+LOCALES = (("zh-Hant", ""), ("en", "en/"))  # (html lang, path prefix)
 FORBIDDEN = ("http://", "google-analytics", "googletagmanager", "<iframe", "<form")
+ALLOWED_SCRIPT_TYPE = "application/ld+json"
+
+
+@dataclass(frozen=True)
+class DocumentSpec:
+    """One document the production contract requires to exist."""
+
+    path: str
+    lang: str
+    prefix: str | None  # None for 404.html
+    route: str | None  # None for 404.html
+    canonical: str
+    root_absolute: bool  # True only for 404.html: it must link with root-absolute paths
+
+
+def _build_documents() -> list[DocumentSpec]:
+    documents = []
+    for lang, prefix in LOCALES:
+        for route in ROUTES:
+            documents.append(
+                DocumentSpec(
+                    path=f"{prefix}{route}index.html",
+                    lang=lang,
+                    prefix=prefix,
+                    route=route,
+                    canonical=f"{ORIGIN}/{prefix}{route}",
+                    root_absolute=False,
+                )
+            )
+    documents.append(
+        DocumentSpec(
+            path="404.html",
+            lang="zh-Hant",
+            prefix=None,
+            route=None,
+            canonical=f"{ORIGIN}/404.html",
+            root_absolute=True,
+        )
+    )
+    return documents
+
+
+DOCUMENTS = _build_documents()
+OTHER_PREFIX = {"": "en/", "en/": ""}
 
 
 class PageParser(HTMLParser):
+    """Collects every fact ``verify()`` needs from one rendered document."""
+
     def __init__(self) -> None:
         super().__init__()
+        self.lang: str | None = None
         self.canonical: str | None = None
-        self.links: set[str] = set()
         self.stylesheets: set[str] = set()
-        self.has_main = False
-        self.has_h1 = False
+        self.icons: set[str] = set()
+        self.hreflang: dict[str, str | None] = {}
+        self.anchors: set[str] = set()
+        self.images: list[dict[str, str | None]] = []
+        self.ids: set[str] = set()
+        self.script_types: list[str | None] = []
+        self.og: dict[str, str | None] = {}
+        self.main_count = 0
+        self.h1_count = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
-        if tag == "link" and values.get("rel") == "canonical":
-            self.canonical = values.get("href")
-        if tag == "link" and values.get("rel") == "stylesheet" and values.get("href"):
-            self.stylesheets.add(values["href"] or "")
-        if tag == "a" and values.get("href"):
-            self.links.add(values["href"] or "")
-        self.has_main = self.has_main or tag == "main"
-        self.has_h1 = self.has_h1 or tag == "h1"
+        element_id = values.get("id")
+        if element_id:
+            self.ids.add(element_id)
+        if tag == "html":
+            self.lang = values.get("lang")
+        elif tag == "link":
+            rel = values.get("rel")
+            href = values.get("href")
+            if rel == "canonical":
+                self.canonical = href
+            elif rel == "stylesheet" and href is not None:
+                self.stylesheets.add(href)
+            elif rel in ("icon", "apple-touch-icon") and href is not None:
+                self.icons.add(href)
+            elif rel == "alternate" and values.get("hreflang") is not None:
+                self.hreflang[values["hreflang"]] = href
+        elif tag == "a":
+            href = values.get("href")
+            if href is not None:
+                self.anchors.add(href)
+        elif tag == "img":
+            self.images.append(
+                {
+                    "src": values.get("src"),
+                    "width": values.get("width"),
+                    "height": values.get("height"),
+                    "alt": values.get("alt"),
+                    "aria_hidden": values.get("aria-hidden"),
+                }
+            )
+        elif tag == "script":
+            self.script_types.append(values.get("type"))
+        elif tag == "meta":
+            prop = values.get("property")
+            if prop and prop.startswith("og:"):
+                self.og[prop] = values.get("content")
+        elif tag == "main":
+            self.main_count += 1
+        elif tag == "h1":
+            self.h1_count += 1
 
 
-def resolve_relative_reference(page: str, reference: str) -> str:
-    """Resolve a site-local link against its generated document path."""
-    assert not reference.startswith("/"), reference
-    base = PurePosixPath(page).parent
-    resolved = PurePosixPath(posixpath.normpath(str(base / reference)))
-    if reference.endswith("/") or reference in {".", ".."}:
+def classify_href(href: str) -> str:
+    """Categorise a href so the internal-link rules only apply where they should."""
+    if href.startswith("#"):
+        return "fragment"
+    if href.startswith(("https://", "http://", "mailto:")):
+        return "external"
+    return "internal"
+
+
+def resolve_relative_reference(document_path: str, reference: str) -> str:
+    """Resolve a same-site href to the repo-relative file it points at.
+
+    Handles both addressing schemes the site uses: paths relative to the
+    document's own directory (the 8 localised documents) and root-absolute
+    paths (404.html, which GitHub Pages serves for arbitrarily deep missing
+    paths). Any ``#fragment`` suffix is stripped first, and a trailing ``/``
+    (or a reference that normalises to a directory) maps to ``index.html``.
+    """
+    path_part = reference.split("#", 1)[0]
+    if path_part.startswith("/"):
+        trimmed = path_part[1:]
+        base = PurePosixPath(".")
+        wants_index = path_part.endswith("/") or trimmed in {"", ".", ".."}
+    else:
+        trimmed = path_part
+        base = PurePosixPath(document_path).parent
+        wants_index = path_part.endswith("/") or path_part in {"", ".", ".."}
+    resolved = PurePosixPath(posixpath.normpath(str(base / trimmed))) if trimmed else base
+    if wants_index:
         resolved /= "index.html"
     return str(resolved)
 
 
+def check(condition: bool, path: str, message: str) -> None:
+    """Raise a clear, file-and-value-scoped AssertionError when a check fails."""
+    if not condition:
+        raise AssertionError(f"{path}: {message}")
+
+
+def check_forbidden_substrings(path: str, source: str) -> None:
+    lowered = source.lower()
+    for token in FORBIDDEN:
+        check(token not in lowered, path, f"forbidden substring found: {token!r}")
+
+
+def check_script_policy(path: str, script_types: list[str | None]) -> None:
+    """The only <script> tags permitted are structured-data JSON-LD — no tracking JS."""
+    for script_type in script_types:
+        check(
+            script_type == ALLOWED_SCRIPT_TYPE,
+            path,
+            f"<script> tag with disallowed type {script_type!r}; only "
+            f"{ALLOWED_SCRIPT_TYPE!r} is permitted",
+        )
+
+
+def check_hreflang(doc: DocumentSpec, hreflang: dict[str, str | None]) -> None:
+    if doc.route is None:
+        check(not hreflang, doc.path, f"404.html must declare no hreflang links, found {hreflang}")
+        return
+    zh_canonical = f"{ORIGIN}/{doc.route}"
+    en_canonical = f"{ORIGIN}/en/{doc.route}"
+    expected = {"zh-Hant": zh_canonical, "en": en_canonical, "x-default": zh_canonical}
+    check(hreflang == expected, doc.path, f"hreflang links expected {expected}, found {hreflang}")
+
+
+def check_open_graph(root: Path, doc: DocumentSpec, og: dict[str, str | None]) -> None:
+    for prop in ("og:title", "og:description", "og:url", "og:image"):
+        check(bool(og.get(prop)), doc.path, f'missing or empty meta property="{prop}"')
+    image = og["og:image"] or ""
+    check(image.startswith(f"{ORIGIN}/"), doc.path, f"og:image must be a URL under {ORIGIN}, found {image!r}")
+    image_local = image[len(ORIGIN) + 1 :]
+    check(image_local.startswith("assets/"), doc.path, f"og:image must live under assets/, found {image!r}")
+    check((root / image_local).is_file(), doc.path, f"og:image file does not exist: {image_local}")
+
+
+def check_images(path: str, images: list[dict[str, str | None]]) -> None:
+    for image in images:
+        src = image["src"]
+        label = f"<img src={src!r}>"
+        check(src is not None, path, "<img> missing src attribute")
+        check(image["width"] is not None, path, f"{label} missing width attribute")
+        check(image["height"] is not None, path, f"{label} missing height attribute")
+        alt = image["alt"]
+        check(alt is not None, path, f"{label} missing alt attribute")
+        if alt == "":
+            check(
+                image["aria_hidden"] == "true",
+                path,
+                f'{label} has empty alt but is not aria-hidden="true" '
+                "(empty alt is only allowed for decorative images)",
+            )
+
+
+def check_fragment_links(path: str, anchors: set[str], ids: set[str]) -> None:
+    for href in anchors:
+        if classify_href(href) == "fragment":
+            anchor = href[1:]
+            check(anchor in ids, path, f"fragment link {href!r} has no matching id in the document")
+
+
+def check_reference(root: Path, doc: DocumentSpec, href: str, label: str, enforce_style: bool) -> None:
+    """Check one same-site href's addressing style and that it resolves to a real file."""
+    if classify_href(href) != "internal":
+        return
+    if enforce_style:
+        starts_absolute = href.startswith("/")
+        if doc.root_absolute:
+            check(
+                starts_absolute,
+                doc.path,
+                f"{label} {href!r} must start with '/' (404.html is served for arbitrarily deep paths)",
+            )
+        else:
+            check(not starts_absolute, doc.path, f"{label} {href!r} must be relative (must not start with '/')")
+    target = resolve_relative_reference(doc.path, href)
+    check((root / target).is_file(), doc.path, f"{label} {href!r} resolves to missing file {target!r}")
+
+
+def check_navigation(doc: DocumentSpec, anchors: set[str]) -> None:
+    """Every localised document links to all four of its own routes plus its translation."""
+    if doc.route is None:
+        return
+    resolved = {resolve_relative_reference(doc.path, href) for href in anchors if classify_href(href) == "internal"}
+    own_routes = {f"{doc.prefix}{route}index.html" for route in ROUTES}
+    missing_own = own_routes - resolved
+    check(not missing_own, doc.path, f"navigation is missing links to own-language routes: {sorted(missing_own)}")
+    other_target = f"{OTHER_PREFIX[doc.prefix]}{doc.route}index.html"
+    check(other_target in resolved, doc.path, f"missing link to matching route in other language: {other_target!r}")
+
+
+def check_sitemap(root: Path) -> None:
+    sitemap_path = root / "sitemap.xml"
+    check(sitemap_path.is_file(), "sitemap.xml", "file does not exist")
+    namespace = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+    tree = ET.parse(sitemap_path)
+    locations = {node.text for node in tree.findall(f"{namespace}url/{namespace}loc")}
+    expected = {doc.canonical for doc in DOCUMENTS if doc.route is not None}
+    check(locations == expected, "sitemap.xml", f"expected canonicals {sorted(expected)}, found {sorted(locations)}")
+    check(f"{ORIGIN}/404.html" not in locations, "sitemap.xml", "must not list 404.html")
+
+
+def check_robots(root: Path) -> None:
+    robots_path = root / "robots.txt"
+    check(robots_path.is_file(), "robots.txt", "file does not exist")
+    content = robots_path.read_text(encoding="utf-8")
+    check(f"Sitemap: {ORIGIN}/sitemap.xml" in content, "robots.txt", "missing Sitemap directive")
+
+
 def verify(root: Path) -> None:
-    assert (root / "CNAME").read_text(encoding="utf-8") == "koi.rainsday.com\n"
-    assert (root / "assets/site.css").is_file()
-    for relative, canonical in REQUIRED_HTML.items():
-        source = (root / relative).read_text(encoding="utf-8")
-        lowered = source.lower()
-        assert all(token not in lowered for token in FORBIDDEN), relative
+    cname_path = root / "CNAME"
+    check(cname_path.is_file(), "CNAME", "file does not exist")
+    cname = cname_path.read_text(encoding="utf-8")
+    check(cname == "koi.rainsday.com\n", "CNAME", f"expected 'koi.rainsday.com\\n', found {cname!r}")
+    check((root / "assets/site.css").is_file(), "assets/site.css", "file does not exist")
+
+    for doc in DOCUMENTS:
+        file_path = root / doc.path
+        check(file_path.is_file(), doc.path, "document does not exist — run render_site.py first")
+        source = file_path.read_text(encoding="utf-8")
+        check_forbidden_substrings(doc.path, source)
+
         parser = PageParser()
-        parser.feed(source)
-        assert parser.canonical == canonical, (relative, parser.canonical)
-        assert parser.has_main and parser.has_h1, relative
-        site_root = SITE_ROOTS[relative]
-        expected_nav = {
-            f"{site_root}{suffix}": target for suffix, target in NAVIGATION_TARGETS.items()
-        }
-        assert parser.stylesheets == {f"{site_root}assets/site.css"}, (relative, parser.stylesheets)
-        assert set(expected_nav).issubset(parser.links), (relative, parser.links)
-        for reference, target in expected_nav.items():
-            assert resolve_relative_reference(relative, reference) == target, (relative, reference)
-        assert all(not reference.startswith("/") for reference in parser.links), (relative, parser.links)
-    sitemap = ET.parse(root / "sitemap.xml")
-    locations = {
-        node.text for node in sitemap.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")
-    }
-    assert locations == set(REQUIRED_HTML.values()) - {f"{ORIGIN}/404.html"}
-    robots = (root / "robots.txt").read_text(encoding="utf-8")
-    assert f"Sitemap: {ORIGIN}/sitemap.xml" in robots
+        try:
+            parser.feed(source)
+        except Exception as error:  # html.parser is lenient; stay defensive anyway
+            raise AssertionError(f"{doc.path}: failed to parse HTML: {error}") from error
+
+        check(parser.main_count >= 1, doc.path, "missing <main>")
+        check(parser.h1_count == 1, doc.path, f"expected exactly one <h1>, found {parser.h1_count}")
+        check(parser.lang == doc.lang, doc.path, f"<html lang> expected {doc.lang!r}, found {parser.lang!r}")
+        check(
+            parser.canonical == doc.canonical,
+            doc.path,
+            f"canonical expected {doc.canonical!r}, found {parser.canonical!r}",
+        )
+        check_script_policy(doc.path, parser.script_types)
+        check_hreflang(doc, parser.hreflang)
+        check_open_graph(root, doc, parser.og)
+        check_images(doc.path, parser.images)
+        check_fragment_links(doc.path, parser.anchors, parser.ids)
+
+        for href in parser.anchors:
+            check_reference(root, doc, href, "link", enforce_style=True)
+        for href in parser.stylesheets | parser.icons:
+            check_reference(root, doc, href, "stylesheet/icon href", enforce_style=True)
+        for image in parser.images:
+            src = image["src"]
+            if src is not None:
+                check_reference(root, doc, src, "image src", enforce_style=True)
+
+        check_navigation(doc, parser.anchors)
+
+    check_sitemap(root)
+    check_robots(root)
 
 
 if __name__ == "__main__":
-    verify(Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve())
+    target = Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
+    try:
+        verify(target)
+    except AssertionError as error:
+        raise SystemExit(f"KOI site verification failed — {error}") from None
     print("KOI site verification passed")
