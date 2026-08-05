@@ -118,6 +118,7 @@ class PageParser(HTMLParser):
         self.hreflang: dict[str, str | None] = {}
         self.anchors: set[str] = set()
         self.images: list[dict[str, str | None]] = []
+        self.media: set[str] = set()
         self.ids: set[str] = set()
         self.scripts: list[dict[str, str | None]] = []
         self.inline_handlers: set[str] = set()
@@ -160,6 +161,14 @@ class PageParser(HTMLParser):
                     "aria_hidden": values.get("aria-hidden"),
                 }
             )
+        elif tag == "source":
+            if values.get("src"):
+                self.media.add(values["src"])
+        elif tag == "video":
+            # A film with a broken source silently plays nothing; the poster
+            # would still show, so the failure is invisible without this.
+            if values.get("poster"):
+                self.media.add(values["poster"])
         elif tag == "script":
             self.scripts.append({"type": values.get("type"), "src": values.get("src")})
         elif tag == "meta":
@@ -470,6 +479,8 @@ def verify(root: Path) -> None:
             src = image["src"]
             if src is not None:
                 check_reference(root, doc, src, "image src", enforce_style=True)
+        for src in parser.media:
+            check_reference(root, doc, src, "video source/poster", enforce_style=True)
 
         check_navigation(doc, parser.anchors)
 

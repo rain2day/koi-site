@@ -70,6 +70,15 @@ def relative_link_in_404(root: Path) -> None:
     edit(root, "404.html", 'href="/privacy/"', 'href="./privacy/"')
 
 
+def dangling_film_source(root: Path) -> None:
+    """A film whose source does not resolve still shows its poster.
+
+    Nothing looks broken — the still frame is there and the play button does
+    nothing — so this is exactly the kind of defect a person does not catch.
+    """
+    edit(root, "index.html", "film/glide.webm", "film/glide-missing.webm")
+
+
 def api_behind_dynamic_import(root: Path) -> None:
     """A module reachable only through ``import()`` must still be scanned.
 
@@ -152,6 +161,7 @@ CASES = {
     "no embedded forms": embedded_form,
     "CSP connect-src must be 'none'": loosen_csp,
     "modules reached only by dynamic import are scanned": api_behind_dynamic_import,
+    "film sources must resolve": dangling_film_source,
 }
 
 

@@ -82,6 +82,25 @@ DEMO = {
 }
 
 
+FILM = {
+    "kind": "film",
+    "id": "watch",
+    "heading": "先看一次",
+    "intro": [
+        "手指離開 h，一路掃到 a。中途必然經過 g、f、s——**紅框是你要的字根，青框只是順路掃過**。KOI 分得出兩者的分別。",
+    ],
+    "sources": (
+        {"source": "film/glide.webm", "type": "video/webm"},
+        {"source": "film/glide.mp4", "type": "video/mp4"},
+    ),
+    "poster": "film/glide-poster.jpg",
+    "width": 1280,
+    "height": 860,
+    "alt": "一筆滑行由 h 經過 g、f、d、s 到 a，候選字出現，「香」落字",
+    "caption": "五秒，一筆，一個字。下面那個鍵盤你可以自己試。",
+}
+
+
 LANDING = {
     "title": "KOI Keyboard — 為香港而設的中文鍵盤",
     "description": "倉頡、速成、筆劃、粵拼、注音，五種輸入方式共用一個鍵盤。手寫離線辨識，打字引擎完全不連網。iOS 16 或以上適用。",
@@ -100,6 +119,7 @@ LANDING = {
     "pond": True,
     "scripts": ("keyboard-demo.js", "stage.js"),
     "sections": [
+        FILM,
         DEMO,
         {
             "kind": "scene",

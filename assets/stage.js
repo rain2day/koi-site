@@ -64,6 +64,98 @@ function wireInk() {
   canvas.addEventListener("pointerleave", stop);
 }
 
+/* ---- the film ------------------------------------------------------------
+ * The markup ships paused, with a poster and native controls, so a visitor with
+ * no JavaScript gets a still and a play button rather than a dead rectangle,
+ * and a visitor who asked for reduced motion is never handed a loop. Autoplay
+ * is granted here, and only here.
+ */
+
+function wireFilm() {
+  const film = document.querySelector("[data-koi-film]");
+  if (!film || reduceMotion.matches) return;
+
+  film.controls = false;
+
+  // Nothing is fetched until the film is nearly on screen, and it stops again
+  // when it leaves — a five-second loop running behind six screens of text is
+  // just a battery cost.
+  const watcher = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting) {
+        film.pause();
+        return;
+      }
+      film.preload = "auto";
+      film.play().catch(() => {
+        // Autoplay refused. Hand the visitor the controls back rather than
+        // leaving them looking at a poster that never moves.
+        film.controls = true;
+      });
+    },
+    { rootMargin: "250px" }
+  );
+  watcher.observe(film);
+}
+
+/* ---- the hint ------------------------------------------------------------
+ * The first time the keyboard comes into view it draws one ghost stroke through
+ * h, d and a — the same ink the demo uses, on the same canvas, but nothing is
+ * decoded and nothing is committed. It answers "what am I supposed to do here?"
+ * without doing it for you.
+ */
+
+function wireHint() {
+  const keys = document.querySelector(".kbd-keys");
+  const canvas = keys && keys.querySelector(".kbd-trail");
+  if (!keys || !canvas || reduceMotion.matches) return;
+
+  const trail = createGlideTrail(canvas);
+  let played = false;
+
+  const centreOf = (letter) => {
+    const key = keys.querySelector(`[data-letter="${letter}"]`);
+    if (!key) return null;
+    const box = keys.getBoundingClientRect();
+    const rect = key.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2 - box.left, y: rect.top + rect.height / 2 - box.top };
+  };
+
+  const draw = () => {
+    const path = ["h", "d", "a"].map(centreOf);
+    if (path.some((point) => point === null)) return;
+    const start = performance.now();
+    const DURATION = 1150;
+
+    const step = (now) => {
+      const progress = Math.min(1, (now - start) / DURATION);
+      // Ease out, so the ghost decelerates into a the way a finger does.
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const span = eased * (path.length - 1);
+      const leg = Math.min(path.length - 2, Math.floor(span));
+      const t = span - leg;
+      trail.push(
+        path[leg].x + (path[leg + 1].x - path[leg].x) * t,
+        path[leg].y + (path[leg + 1].y - path[leg].y) * t
+      );
+      if (progress < 1) requestAnimationFrame(step);
+      else trail.lift();
+    };
+    requestAnimationFrame(step);
+  };
+
+  const watcher = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry.isIntersecting || played) return;
+      played = true;
+      watcher.disconnect();
+      setTimeout(draw, 450);
+    },
+    { threshold: 0.55 }
+  );
+  watcher.observe(keys);
+}
+
 /* ---- the pond ------------------------------------------------------------ */
 
 const pondCanvas = document.querySelector("[data-koi-pond]");
@@ -76,6 +168,8 @@ function pondWanted() {
 }
 
 wireInk();
+wireFilm();
+wireHint();
 
 if (pondWanted()) {
   import("./pond.js")

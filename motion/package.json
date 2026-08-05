@@ -1,0 +1,19 @@
+{
+  "name": "koi-motion",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Remotion compositions for the KOI Keyboard site. Build-time only: the site ships the rendered files, never this project.",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "preinstall": "node -e \"if(!process.env.npm_config_user_agent.includes('pnpm')){console.error('Use pnpm');process.exit(1)}\"",
+    "dev": "remotion studio",
+    "render:glide": "remotion render src/index.ts Glide ../assets/film/glide.mp4 --codec h264 --crf 20",
+    "render:poster": "remotion still src/index.ts Glide ../assets/film/glide-poster.jpg --frame 110"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.416",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.416"
+  }
+}

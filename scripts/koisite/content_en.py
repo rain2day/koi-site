@@ -87,6 +87,25 @@ DEMO = {
 }
 
 
+FILM = {
+    "kind": "film",
+    "id": "watch",
+    "heading": "Watch it once",
+    "intro": [
+        "The finger leaves h and drags to a. It has to pass g, f and s on the way — **the red keys are the ones you meant, the teal ones you merely crossed**. KOI can tell the difference.",
+    ],
+    "sources": (
+        {"source": "film/glide.webm", "type": "video/webm"},
+        {"source": "film/glide.mp4", "type": "video/mp4"},
+    ),
+    "poster": "film/glide-poster.jpg",
+    "width": 1280,
+    "height": 860,
+    "alt": "One stroke gliding from h through g, f, d and s to a, candidates appearing, and 香 committed",
+    "caption": "Five seconds, one stroke, one character. The keyboard below is yours to try.",
+}
+
+
 LANDING = {
     "title": "KOI Keyboard — a Chinese keyboard built for Hong Kong",
     "description": "Cangjie, Quick, Stroke, Jyutping and Zhuyin in one keyboard. Handwriting recognition runs on the device, and the typing engine has no networking code at all. Requires iOS 16.0 or later.",
@@ -105,6 +124,7 @@ LANDING = {
     "pond": True,
     "scripts": ("keyboard-demo.js", "stage.js"),
     "sections": [
+        FILM,
         DEMO,
         {
             "kind": "scene",

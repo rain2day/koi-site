@@ -326,6 +326,38 @@ def _scene(section: dict, context: RenderContext) -> str:
     return f'<section class="scene scene-{tone}"><div class="scene-inner">{"".join(parts)}</div></section>'
 
 
+def _film(section: dict, context: RenderContext) -> str:
+    """A rendered film of the keyboard working.
+
+    The interactive demo further down asks the visitor to do something, and
+    plenty of them will not. This shows the same stroke happening by itself.
+
+    It ships without `autoplay`: the markup is a poster and a paused video, and
+    `stage.js` starts it only when motion is welcome. That way a visitor who
+    asked for reduced motion gets a still frame and a play control rather than
+    a loop they did not want, and a visitor with no JavaScript gets the poster
+    and native controls instead of a blank rectangle.
+    """
+    body = _heading(section, context)
+    body += _paragraphs(section.get("intro"), context)
+
+    sources = "".join(
+        f'<source src="{escape(context.href("asset:" + item["source"]), quote=True)}" '
+        f'type="{escape(item["type"], quote=True)}">'
+        for item in section["sources"]
+    )
+    poster = escape(context.href("asset:" + section["poster"]), quote=True)
+    body.append(
+        f'<figure class="film">'
+        f'<video class="film-video" playsinline muted loop preload="none" controls'
+        f' width="{section["width"]}" height="{section["height"]}"'
+        f' poster="{poster}" aria-label="{escape(section["alt"], quote=True)}"'
+        f" data-koi-film>{sources}</video>"
+        f'<figcaption>{inline(section["caption"], context)}</figcaption></figure>'
+    )
+    return f'<section class="block film-block">{"".join(body)}</section>'
+
+
 def _ink(section: dict, context: RenderContext) -> str:
     """A panel you can write on.
 
@@ -357,6 +389,7 @@ RENDERERS = {
     "demo": _demo,
     "scene": _scene,
     "ink": _ink,
+    "film": _film,
 }
 
 

@@ -1082,6 +1082,25 @@ figcaption {
 
 .scene-quiet .scene-lead { font-size: clamp(1.02rem, 1.8vw, 1.18rem); }
 
+/* --- film ------------------------------------------------------------ */
+
+.film { margin: 2.4rem 0 0; }
+.film-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: #06070c;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.5);
+}
+.film figcaption {
+  margin-top: 1rem;
+  color: var(--dim);
+  font-size: 0.92rem;
+  max-width: 52ch;
+}
+
 /* --- write on water -------------------------------------------------- */
 
 .ink { margin-top: 2.2rem; }
