@@ -27,7 +27,8 @@ UI = {
     "contents_label": "本頁內容",
     "footer_notice": (
         "本站的倉頡試打示範，使用衍生自 "
-        "[rime-cangjie](https://github.com/rime/rime-cangjie)（LGPL-3.0）與 "
+        "[rime-cangjie](https://github.com/rime/rime-cangjie)、"
+        "[rime-essay](https://github.com/rime/rime-essay)（同為 LGPL-3.0）與 "
         "[Cangjie3-Plus](https://github.com/Arthurmcarthur/Cangjie3-Plus)（MIT）的字表，"
         "並依 LGPL-3.0 發佈。倉頡輸入法由朱邦復先生發明。"
         "完整聲明見[第三方授權說明]"

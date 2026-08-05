@@ -3,7 +3,8 @@
    public-domain traditional-character ranking.
 
    This file is a derived work of the following upstream tables:
-     rime/rime-cangjie          LGPL-3.0-or-later
+     rime/rime-cangjie              LGPL-3.0-or-later
+     rime/rime-essay                LGPL-3.0-or-later
      Arthurmcarthur/Cangjie3-Plus   MIT
      stroke-input/stroke-input-data (ranking-traditional.txt)  public domain
 

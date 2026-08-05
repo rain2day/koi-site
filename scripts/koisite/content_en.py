@@ -31,7 +31,8 @@ UI = {
     "contents_label": "On this page",
     "footer_notice": (
         "The Cangjie typing demo on this site runs on a dictionary derived from "
-        "[rime-cangjie](https://github.com/rime/rime-cangjie) (LGPL-3.0) and "
+        "[rime-cangjie](https://github.com/rime/rime-cangjie) and "
+        "[rime-essay](https://github.com/rime/rime-essay) (both LGPL-3.0) and "
         "[Cangjie3-Plus](https://github.com/Arthurmcarthur/Cangjie3-Plus) (MIT), "
         "and is distributed under LGPL-3.0. The Cangjie input method was invented "
         "by Chu Bong-Foo. Full notices: "
