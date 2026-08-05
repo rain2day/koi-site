@@ -95,7 +95,8 @@ LANDING = {
         "detail": "KOI 正在準備提交 App Store 審核。上架後此處會換成下載連結。",
     },
     "structured_data": True,
-    "scripts": ("keyboard-demo.js",),
+    "pond": True,
+    "scripts": ("keyboard-demo.js", "stage.js"),
     "sections": [
         DEMO,
         {

@@ -283,6 +283,7 @@ class CangjieDemo {
       this.trail.lift();
       if (glided && segments.length) {
         this.suppressClick = true;
+        document.dispatchEvent(new CustomEvent("koi:stroke"));
         this.applyGlide(segments);
       }
     };
@@ -426,6 +427,11 @@ class CangjieDemo {
 
   insert(character) {
     this.glideCandidates = null;
+    // Announced rather than called directly: the pond listens if it is there,
+    // and the demo neither knows nor cares whether anything is.
+    document.dispatchEvent(
+      new CustomEvent("koi:commit", { detail: { character } })
+    );
     this.committed += character;
     this.code = "";
     this.render();

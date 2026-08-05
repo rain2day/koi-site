@@ -1,9 +1,11 @@
 # Third-Party Notices
 
-This site serves one file that is not original work: `assets/cangjie-data.js`,
-the Cangjie dictionary the in-page typing demo runs on. Everything else in this
-repository — the renderer, the stylesheet, the demo logic in
-`assets/keyboard-demo.js`, and all page content — is original.
+This site serves two files that are not original work: `assets/cangjie-data.js`,
+the Cangjie dictionary the in-page typing demo runs on, and
+`assets/vendor/three.module.min.js`, the graphics library the landing page's
+interactive water scene renders with. Everything else in this repository —
+the renderer, the stylesheet, the demo logic in `assets/keyboard-demo.js`, and
+all page content — is original.
 
 ## Cangjie dictionary — `assets/cangjie-data.js`
 
@@ -63,6 +65,33 @@ python3 scripts/build_cangjie_data.py \
     --cin  ../urkeyboard/cangjie35_mobile.cin \
     --rank ../urkeyboard/ranking-traditional.txt
 ```
+
+## Three.js — `assets/vendor/`
+
+Three.js is the WebGL library the landing page's interactive water scene is
+built with. It is vendored into this repository rather than loaded from a CDN,
+so the site keeps its promise of loading nothing from any other host. Both files
+are unmodified from upstream:
+
+- `assets/vendor/three.module.min.js`
+- `assets/vendor/three.core.min.js`
+
+Upstream splits the build in two and the module half imports the core half by
+relative path, so both must be present; shipping only the first produces a
+"failed to fetch dynamically imported module" error at runtime.
+
+| Upstream | Licence | Source |
+| --- | --- | --- |
+| Three.js | MIT | <https://github.com/mrdoob/three.js> |
+
+### Licence
+
+Both vendored files are distributed under the **MIT licence**, unchanged from
+upstream. The licence text is in `licenses/three-MIT.txt`.
+
+The library is loaded only by the landing page, and only after the page has
+established that a scene is both wanted and possible: a visitor who asked for
+reduced motion, or whose browser has no WebGL, never downloads it.
 
 ## Not used
 

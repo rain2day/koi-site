@@ -4,12 +4,13 @@
 Runs in GitHub Actions (``.github/workflows/pages.yml``) as
 ``python3 scripts/verify_site.py .`` before the Pages artifact is assembled.
 It enforces the production contract for the rendered, bilingual static site:
-the exact set of documents and their ``<html lang>`` / canonical / hreflang
-metadata, the privacy-first script and forbidden-substring policy, that every
-internal link uses the addressing scheme its document requires, that every
-link/stylesheet/icon/image resolves to a file that actually exists, and the
-sitemap/robots contract. Standard library only. Any violation raises a clear
-message naming the offending file and value, and the process exits non-zero.
+the exact set of documents and their ``<html lang>`` / canonical / hreflang /
+Content-Security-Policy metadata, the privacy-first script and
+forbidden-substring policy, that every internal link uses the addressing
+scheme its document requires, that every link/stylesheet/icon/image resolves
+to a file that actually exists, and the sitemap/robots contract. Standard
+library only. Any violation raises a clear message naming the offending file
+and value, and the process exits non-zero.
 """
 
 from __future__ import annotations
@@ -108,6 +109,7 @@ class PageParser(HTMLParser):
         super().__init__()
         self.lang: str | None = None
         self.canonical: str | None = None
+        self.csp: str | None = None
         self.stylesheets: set[str] = set()
         self.icons: set[str] = set()
         self.hreflang: dict[str, str | None] = {}
@@ -161,6 +163,8 @@ class PageParser(HTMLParser):
             prop = values.get("property")
             if prop and prop.startswith("og:"):
                 self.og[prop] = values.get("content")
+            if (values.get("http-equiv") or "").lower() == "content-security-policy":
+                self.csp = values.get("content")
         elif tag == "main":
             self.main_count += 1
         elif tag == "h1":
@@ -302,6 +306,22 @@ def check_hreflang(doc: DocumentSpec, hreflang: dict[str, str | None]) -> None:
     check(hreflang == expected, doc.path, f"hreflang links expected {expected}, found {hreflang}")
 
 
+def check_csp(path: str, csp: str | None) -> None:
+    """Every document must carry a CSP that blocks outbound connections.
+
+    The site's central claim is that it never phones home. A meta-tag CSP
+    turns that from a property of our source scanning into something the
+    browser itself refuses to violate, regardless of what a future script
+    change tries to do.
+    """
+    check(csp is not None, path, 'missing <meta http-equiv="Content-Security-Policy"> tag')
+    check(
+        "connect-src 'none'" in csp,
+        path,
+        f"Content-Security-Policy must include connect-src 'none', found {csp!r}",
+    )
+
+
 def check_open_graph(root: Path, doc: DocumentSpec, og: dict[str, str | None]) -> None:
     for prop in ("og:title", "og:description", "og:url", "og:image"):
         check(bool(og.get(prop)), doc.path, f'missing or empty meta property="{prop}"')
@@ -413,6 +433,7 @@ def verify(root: Path) -> None:
             doc.path,
             f"canonical expected {doc.canonical!r}, found {parser.canonical!r}",
         )
+        check_csp(doc.path, parser.csp)
         modules |= check_script_policy(root, doc, parser.scripts)
         check_inline_handlers(doc.path, parser.inline_handlers)
         check_hreflang(doc, parser.hreflang)

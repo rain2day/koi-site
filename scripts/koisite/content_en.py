@@ -100,7 +100,8 @@ LANDING = {
         "detail": "KOI is being prepared for App Store review. A download link will replace this notice once it is live.",
     },
     "structured_data": True,
-    "scripts": ("keyboard-demo.js",),
+    "pond": True,
+    "scripts": ("keyboard-demo.js", "stage.js"),
     "sections": [
         DEMO,
         {

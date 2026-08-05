@@ -116,6 +116,10 @@ def embedded_form(root: Path) -> None:
     edit(root, "support/index.html", "</main>", "<form></form></main>")
 
 
+def loosen_csp(root: Path) -> None:
+    edit(root, "index.html", "connect-src 'none'", "connect-src 'self'")
+
+
 CASES = {
     "canonical must match the route": drop_canonical,
     "only ld+json script tags are allowed": inject_tracking_script,
@@ -135,6 +139,7 @@ CASES = {
     "every required document must exist": missing_document,
     "stylesheet href must resolve": broken_stylesheet,
     "no embedded forms": embedded_form,
+    "CSP connect-src must be 'none'": loosen_csp,
 }
 
 

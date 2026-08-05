@@ -80,6 +80,9 @@ def _head(page: dict, locale: Locale, route: str | None, context: RenderContext)
     stylesheet = escape(context.href("asset:site.css"), quote=True)
     parts = [
         '<meta charset="utf-8">',
+        "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; "
+        "connect-src 'none'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
+        "frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'\">",
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         f"<title>{title}</title>",
         f'<meta name="description" content="{description}">',
@@ -213,11 +216,21 @@ def render_page(
         f'<script type="module" src="{escape(context.href(f"asset:{name}"), quote=True)}"></script>'
         for name in page.get("scripts", ())
     )
+    # The WebGL scene, when a page asks for one. Emitted as an empty canvas the
+    # page never depends on: if the module does not load, or the device has no
+    # WebGL, or the visitor asked for reduced motion, what remains is an inert
+    # element behind the content and nothing else changes.
+    pond = ""
+    body_class = ""
+    if page.get("pond"):
+        pond = '<div class="pond" aria-hidden="true"><canvas data-koi-pond></canvas></div>'
+        body_class = ' class="has-pond"'
+
     return (
         "<!doctype html>\n"
         f'<html lang="{locale.code}">\n'
         f"<head>{_head(page, locale, route, context)}</head>\n"
-        f"<body>{skip}{_navigation(ui, locale, route, context)}"
+        f"<body{body_class}>{skip}{pond}{_navigation(ui, locale, route, context)}"
         f'<main class="shell" id="main">{body}</main>'
         f"{_footer(ui, locale, context)}{scripts}</body>\n</html>\n"
     )
