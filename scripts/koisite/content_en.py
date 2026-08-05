@@ -105,42 +105,18 @@ LANDING = {
     "sections": [
         DEMO,
         {
-            "kind": "cards",
+            "kind": "scene",
             "id": "input-methods",
+            "index": "01",
             "heading": "Five input methods, one keyboard",
-            "intro": "No more cycling through the system keyboard list just to change input method. All five modes live inside KOI and switch instantly.",
-            "columns": 3,
-            "items": [
-                {
-                    "title": "Cangjie",
-                    "meta": "Shape-based",
-                    "body": "The native key layout, with every keycap showing its English letter and its Cangjie radical together. Candidates are ordered by frequency, and the characters you pick often move towards the front.",
-                },
-                {
-                    "title": "Quick",
-                    "meta": "Shape-based",
-                    "body": "First-and-last-code input. It shares the Cangjie key layout, so there are no new key positions to learn.",
-                },
-                {
-                    "title": "Stroke",
-                    "meta": "Shape-based",
-                    "body": "Five-key stroke input with `*` as a wildcard — forget a stroke in the middle and a star still finds the character.",
-                },
-                {
-                    "title": "Jyutping",
-                    "meta": "Phonetic",
-                    "body": "Full and abbreviated spellings both work, and a tone number narrows the results. Outputs Hong Kong Traditional Chinese.",
-                },
-                {
-                    "title": "Zhuyin (Dachen)",
-                    "meta": "Phonetic",
-                    "body": "A dedicated Zhuyin key layout that outputs Taiwan Traditional Chinese.",
-                },
-                {
-                    "title": "English",
-                    "meta": "Decoded in parallel",
-                    "body": "The same keystrokes are decoded into Chinese and English candidates at once, so typing English needs no keyboard switch. Disabled in Stroke mode.",
-                },
+            "lead": "No more cycling through the system keyboard list just to change input method. All five modes live inside KOI, and switching is instant.",
+            "points": [
+                {"title": "Cangjie", "body": "The native key layout, with every keycap showing its English letter and its Cangjie radical together. Candidates are ordered by frequency, and the ones you pick often move towards the front."},
+                {"title": "Quick", "body": "First-and-last-code input, on the same key layout as Cangjie. There are no new key positions to learn."},
+                {"title": "Stroke", "body": "Five-key stroke input with `*` as a wildcard — forget a stroke in the middle and a star still finds the character."},
+                {"title": "Jyutping", "body": "Full and abbreviated spellings both work, and a tone number narrows the results. Outputs Hong Kong Traditional Chinese."},
+                {"title": "Zhuyin (Dachen)", "body": "A dedicated Zhuyin key layout that outputs Taiwan Traditional Chinese."},
+                {"title": "English", "body": "The same keystrokes are decoded into Chinese and English candidates at once, so typing English needs no keyboard switch."},
             ],
         },
         {
@@ -164,130 +140,88 @@ LANDING = {
             ],
         },
         {
-            "kind": "cards",
+            "kind": "scene",
             "id": "feel",
-            "heading": "Type however you like",
-            "intro": "Four ways of entering a code can be mixed inside a single composition. Change your mind halfway through and you do not have to clear it and start again.",
-            "columns": 2,
-            "items": [
-                {
-                    "title": "Tap, glide, mix, two-finger chord",
-                    "body": "Tap key by key, glide through the whole code in one stroke, or start tapping and finish gliding. Two fingers pressing at once are picked up as well. It all folds into the same composition.",
-                },
-                {
-                    "title": "A glide that drifts still lands",
-                    "body": "Glide decoding tolerates up to two keys being substituted by a neighbouring key. A finger that wanders slightly does not derail the input.",
-                },
-                {
-                    "title": "A wrong code never leaves you with nothing",
-                    "body": "When you decompose a character wrongly, KOI fills in candidates from near-miss codes and places them after the normal ones. The candidate row never goes blank while you wait.",
-                },
-                {
-                    "title": "Delete and cursor",
-                    "body": "One press deletes the last code, two presses clear the whole composition, and holding it down accelerates. Swipe left or right on the space bar to move the cursor.",
-                },
+            "index": "02",
+            "heading": "Type your way, not the keyboard's",
+            "lead": "Tap, glide, mix the two, chord with two fingers — all four can be mixed inside a single composition. Change your mind halfway through and you do not have to clear it and start again.",
+            "points": [
+                {"title": "Glides that drift", "body": "Decoding tolerates up to two keys being substituted by a neighbouring key. A finger that wanders slightly does not derail the input."},
+                {"title": "Wrong codes still land", "body": "When you decompose a character wrongly, KOI fills in candidates from near-miss codes and places them after the normal ones. The candidate row never goes blank."},
+                {"title": "Delete and cursor", "body": "One press deletes the last code, two presses clear the whole composition; swipe left or right on the space bar to move the cursor."},
             ],
         },
         {
-            "kind": "cards",
+            "kind": "ink",
             "id": "handwriting",
-            "heading": "Handwriting, with nothing to connect to",
-            "intro": "The handwriting recognition model is packaged inside the app. Nothing to download, nothing to connect to, and it writes just as well in aeroplane mode.",
-            "columns": 2,
-            "items": [
-                {
-                    "title": "A Hong Kong handwriting model",
-                    "body": "KOI uses a Hong Kong Traditional Chinese handwriting model, not a Mandarin or Simplified one. The character shapes you are used to writing are the ones it recognises.",
-                },
-                {
-                    "title": "Ink on water",
-                    "body": "The handwriting area is rendered in Metal as a pool of water: your strokes leave ripples, refraction and waves. The intensity is adjustable in settings, so turn it down if you prefer it still.",
-                },
+            "heading": "Writing on water",
+            "intro": [
+                "KOI's handwriting area is rendered in Metal as a pool of water: your strokes leave ripples, refraction and waves. The panel below borrows the same ink: the colour under your finger here is the one the keyboard draws when you glide.",
+            ],
+            "canvas_label": "A water surface you can write on",
+            "hint": "Write here with a finger or a mouse",
+            "note": [
+                "Recognition is not in the browser — that model runs on the device — so what you get here is ink and water, and no characters. The app has a Hong Kong Traditional Chinese handwriting model built in: nothing to download, nothing to connect to, and it writes just as well in aeroplane mode.",
             ],
         },
         {
-            "kind": "cards",
+            "kind": "scene",
             "id": "agent",
-            "heading": "KOI Agent",
-            "intro": "Open it when you need it; leave it closed and it is simply not there. Six modes, all handled on the keyboard, without jumping out to another app.",
-            "columns": 3,
-            "items": [
+            "index": "03",
+            "heading": "AI that is only there when you want it",
+            "lead": "Six modes, all handled on the keyboard, without jumping out to another app. Leave it closed and it is simply not there.",
+            "points": [
                 {"title": "Auto", "body": "Reads what you have in front of you and decides what to do."},
                 {"title": "Ask", "body": "Ask directly, and insert the answer straight into the field."},
                 {"title": "Reply", "body": "Draft a reply to the message you received."},
                 {"title": "Rewrite", "body": "Polish, change the tone, translate."},
-                {"title": "Sticker", "body": "Generate a sticker with a transparent background."},
-                {"title": "Image", "body": "Generate a full scene image."},
+                {"title": "Stickers and images", "body": "Generate a sticker with a transparent background, or a full scene image."},
             ],
+            "aside": "Credits are spent only when you ask for something; everyday typing, candidates and handwriting recognition never cost any. What each action costs is on the [support page](route:support/).",
         },
-        CREDIT_COSTS,
         {
-            "kind": "callout",
-            "tone": "privacy",
+            "kind": "scene",
+            "id": "privacy",
+            "index": "04",
+            "tone": "accent",
             "heading": "The typing engine has no networking code",
-            "body": [
-                "KOI's input engine — candidate generation, code decomposition, learning history — contains no networking code at all. What you type does not leave your device.",
-                "Text goes out in exactly one situation: you open KOI Agent yourself and send a request. There is no other exception.",
+            "lead": [
+                "KOI's input engine — candidate generation, code decomposition, learning history — contains no networking code at all. **What you type does not leave your device.**",
             ],
-            "bullets": [
-                "**No** analytics, **no** crash-reporting SDK, **no** advertising identifier",
-                "**No** logging of the keys you press",
-                "Learning history and custom settings stay on the device, or in a private iCloud that you control",
-                "Full detail in the [privacy policy](route:privacy/)",
+            "points": [
+                {"title": "No analytics", "body": "No analytics tools, no crash-reporting SDK, no advertising identifier."},
+                {"title": "No keystroke logging", "body": "KOI does not record the keys you press."},
+                {"title": "One exception", "body": "You open KOI Agent yourself and send a request. There is no other exception."},
+                {"title": "Where data sits", "body": "Learning history and settings stay on the device, or in a private iCloud that you control."},
             ],
+            "aside": "The [privacy policy](route:privacy/) sets each of these against the implementation, point by point.",
         },
         {
-            "kind": "cards",
+            "kind": "scene",
             "id": "plus",
+            "index": "05",
+            "tone": "quiet",
             "heading": "KOI Plus",
-            "intro": "The free version already includes all five input methods, handwriting, learning and every core typing feature. Plus adds two features, along with a monthly allowance of Credits.",
-            "columns": 2,
-            "items": [
-                {
-                    "title": "Predictive input",
-                    "body": "After a character is committed, KOI suggests the next word or a whole phrase, so there are fewer characters to decompose one by one.",
-                },
-                {
-                    "title": "Cross-device sync",
-                    "body": "Settings and learning history sync through your own private iCloud. It is off by default, and once it is on you press sync yourself — nothing is sent quietly in the background.",
-                },
+            "lead": "The free version already includes all five input methods, handwriting, learning and every core typing feature. Plus adds two more, along with a monthly allowance of Credits.",
+            "points": [
+                {"title": "Predictive input", "body": "After a character is committed, KOI offers the next word or a whole phrase, so there are fewer characters to decompose one by one."},
+                {"title": "Cross-device sync", "body": "Settings and learning history sync through your own private iCloud. Off by default, and once it is on you trigger it yourself."},
             ],
+            "aside": "The full subscription and Credit terms are in the [terms of service](route:terms/); how Credits are counted is on the [support page](route:support/).",
         },
         {
-            "kind": "definitions",
-            "id": "credit-model",
-            "heading": "How Credits work",
-            "items": [
-                {
-                    "term": "Included with a subscription",
-                    "detail": "Monthly and annual plans both grant 250 Credits each month. An annual plan releases them in twelve grants across the year rather than all at once. Each grant is valid for 60 days from the day it is issued.",
-                },
-                {
-                    "term": "Bought separately",
-                    "detail": "Credit packs come in 100, 300 and 800. They are one-off purchases and **do not expire**. They do not include predictive input or cross-device sync.",
-                },
-                {
-                    "term": "When Credits are spent",
-                    "detail": "Only when you ask KOI Agent to do something. Everyday typing does not involve Credits.",
-                },
-            ],
-        },
-        {
-            "kind": "definitions",
+            "kind": "scene",
             "id": "requirements",
-            "heading": "Requirements",
-            "items": [
-                {"term": "iOS version", "detail": "iOS 16.0 or later."},
-                {
-                    "term": "Full Access",
-                    "detail": "The AI features and pasting from the clipboard need “Allow Full Access”. Without it, all five input methods, candidates, learning and handwriting keep working exactly as before. See the [support page](route:support/).",
-                },
-                {
-                    "term": "Character coverage",
-                    "detail": "Candidates cover the Han characters in the Basic Multilingual Plane (BMP). Some extremely rare extension characters (Ext B and beyond) cannot be typed yet.",
-                },
-                {"term": "Interface language", "detail": "The app interface is in Traditional Chinese (Hong Kong)."},
+            "index": "06",
+            "tone": "quiet",
+            "heading": "Getting started",
+            "lead": "KOI needs iOS 16.0 or later. Once it is on the App Store, setup is one step: add the keyboard in iOS Settings.",
+            "points": [
+                {"title": "Full Access", "body": "Needed only for the AI features and pasting from the clipboard. Without it, all five input methods, candidates, learning and handwriting keep working."},
+                {"title": "Character coverage", "body": "Candidates cover the Han characters in the Basic Multilingual Plane (BMP)."},
+                {"title": "Interface language", "body": "The app interface is in Traditional Chinese (Hong Kong)."},
             ],
+            "aside": "Setup steps, common questions and troubleshooting are on the [support page](route:support/).",
         },
     ],
 }
@@ -590,6 +524,43 @@ SUPPORT = {
                     "title": "Candidate order is not what I want",
                     "body": "KOI learns from what you pick, and after a few days of use it usually comes round. To start over, clear the learning history in settings.",
                 },
+            ],
+        },
+        CREDIT_COSTS,
+        {
+            "kind": "definitions",
+            "id": "credit-model",
+            "heading": "How Credits work",
+            "items": [
+                {
+                    "term": "Included with a subscription",
+                    "detail": "Monthly and annual plans both grant 250 Credits each month. An annual plan releases them in twelve grants across the year rather than all at once. Each grant is valid for 60 days from the day it is issued.",
+                },
+                {
+                    "term": "Bought separately",
+                    "detail": "Credit packs come in 100, 300 and 800. They are one-off purchases and **do not expire**. They do not include predictive input or cross-device sync.",
+                },
+                {
+                    "term": "When Credits are spent",
+                    "detail": "Only when you ask KOI Agent to do something. Everyday typing does not involve Credits.",
+                },
+            ],
+        },
+        {
+            "kind": "definitions",
+            "id": "requirements",
+            "heading": "Requirements",
+            "items": [
+                {"term": "iOS version", "detail": "iOS 16.0 or later."},
+                {
+                    "term": "Full Access",
+                    "detail": "The AI features and pasting from the clipboard need “Allow Full Access”. Without it, all five input methods, candidates, learning and handwriting keep working exactly as before.",
+                },
+                {
+                    "term": "Character coverage",
+                    "detail": "Candidates cover the Han characters in the Basic Multilingual Plane (BMP). Some extremely rare extension characters (Ext B and beyond) cannot be typed yet.",
+                },
+                {"term": "Interface language", "detail": "The app interface is in Traditional Chinese (Hong Kong)."},
             ],
         },
         {

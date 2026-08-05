@@ -995,6 +995,106 @@ figcaption {
   .try-list { grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); }
 }
 
+/* --- scenes ---------------------------------------------------------- */
+
+/* A scene is one idea with room around it. The page was a stack of card grids
+   before; the change that makes it read as a narrative is not an effect, it is
+   space and type size — each beat gets a screen's worth of attention instead of
+   a row in a catalogue. */
+.scene {
+  padding-block: clamp(3.5rem, 11vh, 8rem);
+  border-top: 1px solid var(--line);
+}
+.scene:first-of-type { border-top: none; }
+
+.scene-inner { max-width: 54rem; }
+
+.scene-index {
+  margin: 0 0 1.6rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.3em;
+  color: var(--koi);
+}
+
+.scene h2 {
+  margin: 0 0 1.4rem;
+  font-size: clamp(2rem, 5.2vw, 3.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+
+.scene-lead {
+  max-width: 38rem;
+  margin: 0 0 1.1rem;
+  color: var(--muted);
+  font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+  line-height: 1.6;
+}
+.scene-lead strong { color: var(--text); }
+
+.scene-points {
+  list-style: none;
+  display: grid;
+  gap: 1.15rem;
+  margin: 2.6rem 0 0;
+  padding: 0;
+  max-width: 52rem;
+}
+.scene-points li {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 11rem) 1fr;
+  gap: 0 2rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+}
+.point-title { font-weight: 620; }
+.point-body { color: var(--muted); }
+
+.scene-aside {
+  margin: 2.2rem 0 0;
+  color: var(--dim);
+  font-size: 0.92rem;
+  max-width: 52ch;
+}
+
+/* The privacy beat is the one claim worth stopping the page for. */
+.scene-accent {
+  border-top: none;
+  border-left: 3px solid var(--teal);
+  padding-left: clamp(1.4rem, 4vw, 3rem);
+  background: linear-gradient(100deg, var(--teal-wash), transparent 58%);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+.scene-accent .scene-index { color: var(--teal); }
+
+.scene-quiet .scene-lead { font-size: clamp(1.02rem, 1.8vw, 1.18rem); }
+
+/* --- write on water -------------------------------------------------- */
+
+.ink { margin-top: 2.2rem; }
+.ink-surface {
+  display: block;
+  width: 100%;
+  height: clamp(13rem, 30vh, 20rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(24rem 14rem at 50% 0%, rgba(93, 217, 200, 0.09), transparent 70%),
+    rgba(6, 12, 20, 0.55);
+  /* The stroke belongs to the canvas, not to the page scroller. */
+  touch-action: none;
+  cursor: crosshair;
+}
+.ink-surface:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.ink-hint {
+  margin: 0.9rem 0 0;
+  color: var(--dim);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
 /* --- footer ---------------------------------------------------------- */
 
 footer {

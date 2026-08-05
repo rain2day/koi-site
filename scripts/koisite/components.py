@@ -74,6 +74,13 @@ def inline(text: str, context: RenderContext) -> str:
     return "".join(parts)
 
 
+def _as_list(values: object) -> list:
+    """Accept a single string or a sequence of them, uniformly."""
+    if values is None:
+        return []
+    return [values] if isinstance(values, str) else list(values)
+
+
 def _paragraphs(values: object, context: RenderContext) -> list[str]:
     if values is None:
         return []
@@ -272,6 +279,66 @@ def _callout(section: dict, context: RenderContext) -> str:
     return f'<section class="callout callout-{tone}">{"".join(body)}</section>'
 
 
+def _scene(section: dict, context: RenderContext) -> str:
+    """One beat of the landing page.
+
+    The page used to be eleven stacked card grids: accurate, and a catalogue.
+    A scene carries one idea — a numbered statement, a sentence that earns it,
+    and at most a few supporting notes — and gives it enough room and type size
+    to land before the next one starts. Detail that a reader looks things up in
+    rather than reads through belongs on the support page, not here.
+    """
+    index = section.get("index")
+    parts = []
+    if index:
+        parts.append(f'<p class="scene-index" aria-hidden="true">{escape(index)}</p>')
+    if section.get("eyebrow"):
+        parts.append(f'<p class="eyebrow">{inline(section["eyebrow"], context)}</p>')
+
+    heading = section["heading"]
+    anchor = section.get("id")
+    if anchor:
+        parts.append(f'<h2 id="{escape(anchor, quote=True)}">{inline(heading, context)}</h2>')
+    else:
+        parts.append(f"<h2>{inline(heading, context)}</h2>")
+
+    parts += [f'<p class="scene-lead">{inline(line, context)}</p>' for line in _as_list(section.get("lead"))]
+
+    points = section.get("points")
+    if points:
+        rendered = "".join(
+            f'<li><span class="point-title">{inline(point["title"], context)}</span>'
+            f'<span class="point-body">{inline(point["body"], context)}</span></li>'
+            for point in points
+        )
+        parts.append(f'<ul class="scene-points">{rendered}</ul>')
+
+    if section.get("aside"):
+        parts.append(f'<p class="scene-aside">{inline(section["aside"], context)}</p>')
+
+    tone = section.get("tone", "plain")
+    return f'<section class="scene scene-{tone}"><div class="scene-inner">{"".join(parts)}</div></section>'
+
+
+def _ink(section: dict, context: RenderContext) -> str:
+    """A panel you can write on.
+
+    KOI renders its handwriting area as a water surface. This is the closest the
+    web can honestly get: the ink is the keyboard's own glide trail and the
+    strokes disturb the pond behind the page. Recognition is not here and the
+    copy says so — that model runs on the device.
+    """
+    parts = _heading(section, context)
+    parts += _paragraphs(section.get("intro"), context)
+    parts.append(
+        f'<div class="ink"><canvas class="ink-surface" data-koi-ink '
+        f'aria-label="{escape(section["canvas_label"], quote=True)}" role="img"></canvas>'
+        f'<p class="ink-hint">{inline(section["hint"], context)}</p></div>'
+    )
+    parts += _paragraphs(section.get("note"), context)
+    return f'<section class="block ink-block">{"".join(parts)}</section>'
+
+
 RENDERERS = {
     "prose": _prose,
     "cards": _cards,
@@ -282,6 +349,8 @@ RENDERERS = {
     "showcase": _showcase,
     "callout": _callout,
     "demo": _demo,
+    "scene": _scene,
+    "ink": _ink,
 }
 
 
