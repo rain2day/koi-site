@@ -1,106 +1,111 @@
 #!/usr/bin/env python3
+"""Render the KOI public site from structured content.
+
+Usage: ``python3 scripts/render_site.py``
+
+Traditional Chinese is written to the site root and English to ``/en/``. The two
+content modules are checked for structural parity before anything is written, so
+a section added to one language and forgotten in the other fails here rather
+than reaching production.
+"""
+
 from __future__ import annotations
 
+import sys
 from pathlib import Path
-from textwrap import dedent
 
-ORIGIN = "https://koi.rainsday.com"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from koisite import content_en, content_zh
+from koisite.layout import ENGLISH, ORIGIN, ROUTES, TRADITIONAL_CHINESE, render_page
+
 ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "assets"
+LOCALE_CONTENT = ((TRADITIONAL_CHINESE, content_zh), (ENGLISH, content_en))
 
-PAGES = {
-    "index.html": {
-        "site_root": "./",
-        "title": "KOI Keyboard",
-        "description": "KOI Keyboard official product website.",
-        "canonical": f"{ORIGIN}/",
-        "eyebrow": "KOI Keyboard",
-        "heading": "為香港文字而設計。",
-        "body": dedent("""
-            <p class="lede">KOI Keyboard 官方網站基礎已經就緒。產品介紹與完整圖片正在準備中。</p>
-            <section class="grid" aria-label="Website sections">
-              <article class="card"><h2>Privacy</h2><p>了解 KOI 的私隱政策頁面狀態。</p><a href="{site_root}privacy/">查看 Privacy</a></article>
-              <article class="card"><h2>Support</h2><p>取得 KOI 支援及聯絡資料。</p><a href="{site_root}support/">查看 Support</a></article>
-            </section>
-            <p class="notice">This is the official technical base for KOI Keyboard. Final product content is being prepared.</p>
-        """).strip(),
-    },
-    "privacy/index.html": {
-        "site_root": "../",
-        "title": "KOI Keyboard Privacy",
-        "description": "Privacy information for KOI Keyboard.",
-        "canonical": f"{ORIGIN}/privacy/",
-        "eyebrow": "KOI · Privacy",
-        "heading": "Privacy Policy",
-        "body": dedent("""
-            <p class="lede">KOI Keyboard 的完整私隱政策正在準備及審閱中。正式版本發佈前，本頁不會作出未經確認的資料處理聲明。</p>
-            <section class="card"><h2>Privacy contact</h2><p>私隱查詢：<a href="mailto:privacy@rainsday.com">privacy@rainsday.com</a></p></section>
-        """).strip(),
-    },
-    "support/index.html": {
-        "site_root": "../",
-        "title": "KOI Keyboard Support",
-        "description": "Support and contact information for KOI Keyboard.",
-        "canonical": f"{ORIGIN}/support/",
-        "eyebrow": "KOI · Support",
-        "heading": "KOI Support",
-        "body": dedent("""
-            <p class="lede">KOI Keyboard 的完整支援資料正在準備中。</p>
-            <section class="card"><h2>Contact</h2><p>支援查詢：<a href="mailto:support@rainsday.com">support@rainsday.com</a></p><p>私隱查詢：<a href="mailto:privacy@rainsday.com">privacy@rainsday.com</a></p></section>
-        """).strip(),
-    },
-    "terms/index.html": {
-        "site_root": "../",
-        "title": "KOI Keyboard Terms",
-        "description": "Terms information for KOI Keyboard.",
-        "canonical": f"{ORIGIN}/terms/",
-        "eyebrow": "KOI · Terms",
-        "heading": "Terms",
-        "body": dedent("""
-            <p class="lede">KOI 專用條款內容正在準備及審閱中。</p>
-            <section class="card"><h2>Subscriptions</h2><p>KOI App 內訂閱目前繼續使用 Apple Standard EULA。此頁不取代 App 內顯示的 Apple 條款連結。</p></section>
-        """).strip(),
-    },
-    "404.html": {
-        "site_root": "./",
-        "title": "KOI Keyboard — Page Not Found",
-        "description": "The requested KOI Keyboard page was not found.",
-        "canonical": f"{ORIGIN}/404.html",
-        "eyebrow": "KOI · 404",
-        "heading": "找不到頁面",
-        "body": '<p class="lede">你要求的頁面不存在或已經移動。</p><p><a href="{site_root}">返回 KOI 首頁</a></p>',
-    },
-}
 
-TEMPLATE = dedent("""\
-    <!doctype html>
-    <html lang="zh-Hant">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>{title}</title>
-      <meta name="description" content="{description}">
-      <link rel="canonical" href="{canonical}">
-      <meta property="og:title" content="{title}">
-      <meta property="og:url" content="{canonical}">
-      <meta property="og:type" content="website">
-      <link rel="stylesheet" href="{site_root}assets/site.css">
-    </head>
-    <body>
-      <header><nav class="shell" aria-label="Primary"><a class="brand" href="{site_root}">KOI</a><div class="nav-links"><a href="{site_root}">首頁</a><a href="{site_root}privacy/">Privacy</a><a href="{site_root}support/">Support</a><a href="{site_root}terms/">Terms</a></div></nav></header>
-      <main class="shell">
-        <p class="eyebrow">{eyebrow}</p>
-        <h1>{heading}</h1>
-        {body}
-      </main>
-      <footer><div class="shell"><span>© 2026 RaIN</span><span><a href="{site_root}privacy/">Privacy</a> · <a href="{site_root}support/">Support</a> · <a href="{site_root}terms/">Terms</a></span></div></footer>
-    </body>
-    </html>
-""")
+def section_signature(page: dict) -> list[tuple[str, str | None]]:
+    return [(section["kind"], section.get("id")) for section in page["sections"]]
 
-for relative, page in PAGES.items():
+
+def check_parity() -> None:
+    """Both languages must expose the same pages built from the same sections."""
+    if set(content_zh.PAGES) != set(content_en.PAGES):
+        raise SystemExit(
+            f"page sets differ: zh={sorted(content_zh.PAGES)} en={sorted(content_en.PAGES)}"
+        )
+    if set(content_zh.PAGES) != set(ROUTES):
+        raise SystemExit(f"content pages {sorted(content_zh.PAGES)} do not match routes {sorted(ROUTES)}")
+    for route in ROUTES:
+        chinese = section_signature(content_zh.PAGES[route])
+        english = section_signature(content_en.PAGES[route])
+        if chinese != english:
+            raise SystemExit(
+                f"section structure differs for route '/{route}':\n  zh={chinese}\n  en={english}"
+            )
+    if set(content_zh.UI) != set(content_en.UI):
+        raise SystemExit("UI string sets differ between languages")
+
+
+def write(relative: str, body: str) -> None:
     destination = ROOT / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
-    rendered = {**page, "body": page["body"].format(site_root=page["site_root"])}
-    destination.write_text(TEMPLATE.format(**rendered), encoding="utf-8")
+    destination.write_text(body, encoding="utf-8")
 
-print(f"Rendered {len(PAGES)} KOI site pages")
+
+def render_sitemap() -> str:
+    entries = "".join(
+        f"<url><loc>{locale.canonical(route)}</loc></url>"
+        for locale, _ in LOCALE_CONTENT
+        for route in ROUTES
+    )
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"{entries}</urlset>\n"
+    )
+
+
+def main() -> None:
+    check_parity()
+    written = 0
+    for locale, content in LOCALE_CONTENT:
+        for route in ROUTES:
+            document_path = locale.document_path(route)
+            write(
+                document_path,
+                render_page(
+                    page=content.PAGES[route],
+                    ui=content.UI,
+                    locale=locale,
+                    route=route,
+                    document_path=document_path,
+                    asset_root=ASSETS,
+                ),
+            )
+            written += 1
+
+    # 404.html is served for arbitrarily deep missing paths, so it links
+    # root-absolutely and is excluded from the sitemap.
+    write(
+        "404.html",
+        render_page(
+            page=content_zh.NOT_FOUND,
+            ui=content_zh.UI,
+            locale=TRADITIONAL_CHINESE,
+            route=None,
+            document_path="404.html",
+            asset_root=ASSETS,
+            root_absolute=True,
+        ),
+    )
+    written += 1
+
+    write("sitemap.xml", render_sitemap())
+    write("robots.txt", f"User-agent: *\nAllow: /\n\nSitemap: {ORIGIN}/sitemap.xml\n")
+    write("CNAME", "koi.rainsday.com\n")
+    print(f"Rendered {written} KOI site pages")
+
+
+if __name__ == "__main__":
+    main()
