@@ -29,6 +29,15 @@ UI = {
     "footer_nav_label": "Footer navigation",
     "footer_source": "Site source",
     "contents_label": "On this page",
+    "footer_notice": (
+        "The Cangjie typing demo on this site runs on a dictionary derived from "
+        "[rime-cangjie](https://github.com/rime/rime-cangjie) (LGPL-3.0) and "
+        "[Cangjie3-Plus](https://github.com/Arthurmcarthur/Cangjie3-Plus) (MIT), "
+        "and is distributed under LGPL-3.0. The Cangjie input method was invented "
+        "by Chu Bong-Foo. Full notices: "
+        "[third-party licences]"
+        "(https://github.com/rain2day/koi-site/blob/main/THIRD-PARTY.md)."
+    ),
 }
 
 CREDIT_COSTS = {
@@ -49,6 +58,32 @@ CREDIT_COSTS = {
 }
 
 
+DEMO = {
+    "kind": "demo",
+    "id": "try",
+    "heading": "Type Cangjie right here",
+    "intro": [
+        "This is not a video. It is a working Cangjie input method running inside your browser: press the radical keys to build a code, watch the candidates appear, pick one to commit it. On a laptop you can just type on your own keyboard.",
+    ],
+    "tries_label": "Codes worth trying",
+    "tries": (
+        {"code": "hqi", "result": "我"},
+        {"code": "onf", "result": "你"},
+        {"code": "hda", "result": "香"},
+        {"code": "etcu", "result": "港"},
+        {"code": "nfwg", "result": "鯉"},
+    ),
+    "fallback": [
+        "This demo needs JavaScript. It is the only script on the site, and it never contacts a server.",
+        "For reference: `hqi` gives 我, `onf` gives 你, `hda` gives 香, and `etcu` gives 港.",
+    ],
+    "note": [
+        "**Same as the app**: key layout, radicals, candidate order including the Cantonese weighting, space committing the first candidate, the five-code ceiling, and the number row that becomes the candidate row once you start composing.",
+        "**Not in the demo**: glide and two-finger chorded entry, learning, the other four input methods, and the `z` wildcard. The dictionary is also cut down to 3,030 common characters rather than the 27,584 the app bundles.",
+    ],
+}
+
+
 LANDING = {
     "title": "KOI Keyboard — a Chinese keyboard built for Hong Kong",
     "description": "Cangjie, Quick, Stroke, Jyutping and Zhuyin in one keyboard. Handwriting recognition runs on the device, and the typing engine has no networking code at all. Requires iOS 16.0 or later.",
@@ -64,7 +99,9 @@ LANDING = {
         "detail": "KOI is being prepared for App Store review. A download link will replace this notice once it is live.",
     },
     "structured_data": True,
+    "scripts": ("keyboard-demo.js",),
     "sections": [
+        DEMO,
         {
             "kind": "cards",
             "id": "input-methods",

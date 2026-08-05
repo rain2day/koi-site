@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
 import posixpath
+import re
 import sys
 import xml.etree.ElementTree as ET
 
@@ -26,6 +27,35 @@ ROUTES = ("", "privacy/", "support/", "terms/")
 LOCALES = (("zh-Hant", ""), ("en", "en/"))  # (html lang, path prefix)
 FORBIDDEN = ("http://", "google-analytics", "googletagmanager", "<iframe", "<form")
 ALLOWED_SCRIPT_TYPE = "application/ld+json"
+
+# The site runs one first-party script: the Cangjie typing demo. That is a
+# deliberate exception to "no JavaScript", and it is only safe because the
+# exception is narrow and checked rather than assumed:
+#
+#   * inline <script> is still limited to JSON-LD, so no logic can be smuggled
+#     into a page body;
+#   * an executable <script> must be type="module" with a src resolving to a
+#     file in this repository, so nothing is ever fetched from another host;
+#   * the script files themselves are scanned for the APIs that could reach the
+#     network or persist a visitor identifier.
+#
+# The landing page tells visitors the demo runs entirely on their device. These
+# checks are what make that a fact about the artifact rather than a promise.
+NETWORK_APIS = (
+    "fetch(",
+    "XMLHttpRequest",
+    "WebSocket",
+    "sendBeacon",
+    "EventSource",
+    "navigator.geolocation",
+    "localStorage",
+    "sessionStorage",
+    "document.cookie",
+    "indexedDB",
+)
+# No standard HTML attribute outside the event-handler family begins with
+# "on", so the prefix alone is a sound test for inline script.
+INLINE_HANDLER_PREFIX = "on"
 
 
 @dataclass(frozen=True)
@@ -84,7 +114,8 @@ class PageParser(HTMLParser):
         self.anchors: set[str] = set()
         self.images: list[dict[str, str | None]] = []
         self.ids: set[str] = set()
-        self.script_types: list[str | None] = []
+        self.scripts: list[dict[str, str | None]] = []
+        self.inline_handlers: set[str] = set()
         self.og: dict[str, str | None] = {}
         self.main_count = 0
         self.h1_count = 0
@@ -94,6 +125,9 @@ class PageParser(HTMLParser):
         element_id = values.get("id")
         if element_id:
             self.ids.add(element_id)
+        for name in values:
+            if name.startswith(INLINE_HANDLER_PREFIX):
+                self.inline_handlers.add(f"<{tag} {name}>")
         if tag == "html":
             self.lang = values.get("lang")
         elif tag == "link":
@@ -122,7 +156,7 @@ class PageParser(HTMLParser):
                 }
             )
         elif tag == "script":
-            self.script_types.append(values.get("type"))
+            self.scripts.append({"type": values.get("type"), "src": values.get("src")})
         elif tag == "meta":
             prop = values.get("property")
             if prop and prop.startswith("og:"):
@@ -178,15 +212,84 @@ def check_forbidden_substrings(path: str, source: str) -> None:
         check(token not in lowered, path, f"forbidden substring found: {token!r}")
 
 
-def check_script_policy(path: str, script_types: list[str | None]) -> None:
-    """The only <script> tags permitted are structured-data JSON-LD — no tracking JS."""
-    for script_type in script_types:
+def check_script_policy(root: Path, doc: DocumentSpec, scripts: list[dict[str, str | None]]) -> set[str]:
+    """Permit JSON-LD and first-party ES modules; reject everything else.
+
+    Returns the repo-relative paths of the module files this document loads, so
+    the caller can scan the sources themselves.
+    """
+    modules: set[str] = set()
+    for script in scripts:
+        script_type = script["type"]
+        src = script["src"]
+
+        if src is None:
+            check(
+                script_type == ALLOWED_SCRIPT_TYPE,
+                doc.path,
+                f"inline <script> with type {script_type!r}; inline script is limited to "
+                f"{ALLOWED_SCRIPT_TYPE!r}",
+            )
+            continue
+
         check(
-            script_type == ALLOWED_SCRIPT_TYPE,
-            path,
-            f"<script> tag with disallowed type {script_type!r}; only "
-            f"{ALLOWED_SCRIPT_TYPE!r} is permitted",
+            script_type == "module",
+            doc.path,
+            f'<script src={src!r}> must be type="module", found {script_type!r}',
         )
+        check(
+            classify_href(src) == "internal",
+            doc.path,
+            f"<script src={src!r}> must be a first-party path; the site loads no remote script",
+        )
+        check_reference(root, doc, src, "script src", enforce_style=True)
+        modules.add(resolve_relative_reference(doc.path, src))
+    return modules
+
+
+def check_inline_handlers(path: str, handlers: set[str]) -> None:
+    for handler in sorted(handlers):
+        check(False, path, f"inline event handler {handler} is not permitted")
+
+
+def check_module_sources(root: Path, modules: set[str]) -> None:
+    """Scan shipped JavaScript for anything that could leave the device.
+
+    The site tells visitors the typing demo runs entirely in their browser. This
+    is the check that keeps that sentence true as the code changes: a module
+    that grows a fetch call, or starts writing localStorage, fails the deploy.
+
+    Imports are followed, so a helper module cannot dodge the scan by not being
+    referenced from HTML directly.
+    """
+    pending = list(modules)
+    scanned: set[str] = set()
+    while pending:
+        module = pending.pop()
+        if module in scanned:
+            continue
+        scanned.add(module)
+
+        path = root / module
+        check(path.is_file(), module, "script referenced but missing")
+        source = path.read_text(encoding="utf-8")
+
+        for api in NETWORK_APIS:
+            check(
+                api not in source,
+                module,
+                f"uses {api!r}; the demo must not reach the network or persist visitor state",
+            )
+        check("http://" not in source, module, "contains an insecure http:// URL")
+
+        for match in re.finditer(r"""^\s*(?:import|export)\b[^;\n]*?from\s+["']([^"']+)["']""", source, re.M):
+            target = match.group(1)
+            check(
+                target.startswith("."),
+                module,
+                f"imports {target!r}; only relative first-party imports are permitted",
+            )
+            pending.append(resolve_relative_reference(module, target))
 
 
 def check_hreflang(doc: DocumentSpec, hreflang: dict[str, str | None]) -> None:
@@ -289,6 +392,7 @@ def verify(root: Path) -> None:
     check(cname == "koi.rainsday.com\n", "CNAME", f"expected 'koi.rainsday.com\\n', found {cname!r}")
     check((root / "assets/site.css").is_file(), "assets/site.css", "file does not exist")
 
+    modules: set[str] = set()
     for doc in DOCUMENTS:
         file_path = root / doc.path
         check(file_path.is_file(), doc.path, "document does not exist — run render_site.py first")
@@ -309,7 +413,8 @@ def verify(root: Path) -> None:
             doc.path,
             f"canonical expected {doc.canonical!r}, found {parser.canonical!r}",
         )
-        check_script_policy(doc.path, parser.script_types)
+        modules |= check_script_policy(root, doc, parser.scripts)
+        check_inline_handlers(doc.path, parser.inline_handlers)
         check_hreflang(doc, parser.hreflang)
         check_open_graph(root, doc, parser.og)
         check_images(doc.path, parser.images)
@@ -326,6 +431,7 @@ def verify(root: Path) -> None:
 
         check_navigation(doc, parser.anchors)
 
+    check_module_sources(root, modules)
     check_sitemap(root)
     check_robots(root)
 

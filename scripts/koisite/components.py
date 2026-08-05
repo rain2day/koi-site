@@ -226,6 +226,42 @@ def _showcase(section: dict, context: RenderContext) -> str:
     return f'<section class="block">{"".join(body)}</section>'
 
 
+def _demo(section: dict, context: RenderContext) -> str:
+    """The live Cangjie keyboard.
+
+    What renders here is the fallback: the codes worth trying, written out so
+    the section still teaches something without JavaScript, on a slow link, or
+    to a crawler. The demo module replaces the mount's contents on load, so the
+    fallback is never shown twice and never has to be hidden by script.
+    """
+    body = _heading(section, context)
+    body += _paragraphs(section.get("intro"), context)
+
+    tries = "".join(
+        f'<li><code>{escape(item["code"])}</code>'
+        f'<span class="try-arrow" aria-hidden="true">→</span>'
+        f'<span class="try-result">{escape(item["result"])}</span></li>'
+        for item in section.get("tries", ())
+    )
+    prompts = (
+        f'<div class="demo-prompts"><p class="demo-prompts-label">'
+        f'{inline(section["tries_label"], context)}</p>'
+        f'<ul class="try-list">{tries}</ul></div>'
+        if tries
+        else ""
+    )
+
+    fallback = "".join(_paragraphs(section.get("fallback"), context))
+    mount = (
+        f'<div class="kbd-mount" data-cangjie-demo>'
+        f'<div class="kbd-fallback">{fallback}</div></div>'
+    )
+
+    body.append(f'<div class="demo">{mount}{prompts}</div>')
+    body += _paragraphs(section.get("note"), context)
+    return f'<section class="block demo-block">{"".join(body)}</section>'
+
+
 def _callout(section: dict, context: RenderContext) -> str:
     tone = section.get("tone", "note")
     body = []
@@ -245,6 +281,7 @@ RENDERERS = {
     "definitions": _definitions,
     "showcase": _showcase,
     "callout": _callout,
+    "demo": _demo,
 }
 
 

@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import PurePosixPath
 
-from .components import RenderContext, render_contents, render_sections
+from .components import RenderContext, inline, render_contents, render_sections
 
 ORIGIN = "https://koi.rainsday.com"
 SOURCE_URL = "https://github.com/rain2day/koi-site"
@@ -169,11 +169,18 @@ def _footer(ui: dict, locale: Locale, context: RenderContext) -> str:
         f"{escape(ui[NAV_KEYS[target]])}</a>"
         for target in ROUTES
     )
+    # The typing demo runs on a dictionary derived from LGPL-3.0 upstream work.
+    # Attribution has to be visible on the pages that serve it, not only in the
+    # repository, so it renders in the footer of every page.
+    notice = ""
+    if ui.get("footer_notice"):
+        notice = f'<p class="footer-notice">{inline(ui["footer_notice"], context)}</p>'
     return (
         '<footer><div class="shell footer-inner">'
         f'<p class="footer-rights">{escape(ui["footer_rights"])}</p>'
         f'<nav class="footer-links" aria-label="{escape(ui["footer_nav_label"], quote=True)}">{links}</nav>'
         f'<p class="footer-source"><a href="{SOURCE_URL}">{escape(ui["footer_source"])}</a></p>'
+        f"{notice}"
         "</div></footer>"
     )
 
@@ -199,11 +206,18 @@ def render_page(
         body += render_contents(sections, ui["contents_label"], context)
     body += render_sections(sections, context)
     skip = f'<a class="skip-link" href="#main">{escape(ui["skip"])}</a>'
+
+    # Modules load at the end of the body and are deferred by definition, so the
+    # page paints and is readable before the demo's dictionary is parsed.
+    scripts = "".join(
+        f'<script type="module" src="{escape(context.href(f"asset:{name}"), quote=True)}"></script>'
+        for name in page.get("scripts", ())
+    )
     return (
         "<!doctype html>\n"
         f'<html lang="{locale.code}">\n'
         f"<head>{_head(page, locale, route, context)}</head>\n"
         f"<body>{skip}{_navigation(ui, locale, route, context)}"
         f'<main class="shell" id="main">{body}</main>'
-        f"{_footer(ui, locale, context)}</body>\n</html>\n"
+        f"{_footer(ui, locale, context)}{scripts}</body>\n</html>\n"
     )
