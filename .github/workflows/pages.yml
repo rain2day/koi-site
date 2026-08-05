@@ -27,6 +27,11 @@ jobs:
       - name: Test the deploy gate
         run: python3 scripts/test_verify_site.py
 
+      # The glide decoder is the demo's whole point and the one piece of real
+      # algorithm on the site. It is tested against the shipped dictionary.
+      - name: Test the glide decoder
+        run: node scripts/test_glide_decoder.mjs
+
       # The committed HTML is what ships, so it has to be exactly what the
       # content modules produce. A re-render that changes any tracked file means
       # someone edited content without re-rendering, or edited HTML by hand.
