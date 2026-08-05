@@ -834,7 +834,29 @@ figcaption {
   .kbd-bar.is-candidates .kbd-candidate:nth-child(n + 5) { animation-delay: 0.08s; }
 }
 
-.kbd-keys { display: grid; gap: 0.35rem; }
+/* `touch-action: none` is what makes gliding possible on a phone: without it
+   the browser claims the drag for scrolling and the stroke never reaches the
+   decoder. The trail canvas sits over the keys and takes no pointer events. */
+.kbd-keys {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  touch-action: none;
+}
+
+/* A canvas is a replaced element: with `inset: 0` alone its layout size still
+   comes from its width/height attributes, so the HiDPI backing store (CSS size
+   x devicePixelRatio) becomes the CSS size too, and each resize observation
+   feeds the next — 283px of keyboard measured 1200px wide and every stroke was
+   drawn off-canvas. The explicit 100% is what pins the box to the container. */
+.kbd-trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
 .kbd-row { display: flex; gap: 0.3rem; justify-content: center; }
 .kbd-row:nth-child(2) { padding-inline: 4%; }
 

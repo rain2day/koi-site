@@ -62,11 +62,11 @@ CREDIT_COSTS = {
 DEMO = {
     "kind": "demo",
     "id": "try",
-    "heading": "Type Cangjie right here",
+    "heading": "One stroke, one character",
     "intro": [
-        "This is not a video. It is a working Cangjie input method running inside your browser: press the radical keys to build a code, watch the candidates appear, pick one to commit it. On a laptop you can just type on your own keyboard.",
+        "This is not a video. It is a working Cangjie input method running inside your browser. **Drag one stroke across the radicals** and it spells the whole code: keys you clip on the way are skipped, and a finger that wanders still lands — which is the point of KOI. Tapping works too, and on a laptop you can type on your own keyboard.",
     ],
-    "tries_label": "Codes worth trying",
+    "tries_label": "Strokes worth trying",
     "tries": (
         {"code": "hqi", "result": "我"},
         {"code": "onf", "result": "你"},
@@ -75,12 +75,12 @@ DEMO = {
         {"code": "nfwg", "result": "鯉"},
     ),
     "fallback": [
-        "This demo needs JavaScript. It is the only script on the site, and it never contacts a server.",
+        "This demo needs JavaScript. The demo is the only scripted thing on the site, and it never contacts a server.",
         "For reference: `hqi` gives 我, `onf` gives 你, `hda` gives 香, and `etcu` gives 港.",
     ],
     "note": [
-        "**Same as the app**: key layout, radicals, candidate order including the Cantonese weighting, space committing the first candidate, the five-code ceiling, and the number row that becomes the candidate row once you start composing.",
-        "**Not in the demo**: glide and two-finger chorded entry, learning, the other four input methods, and the `z` wildcard. The dictionary is also cut down to 3,030 common characters rather than the 27,584 the app bundles.",
+        "**Same as the app**: glide decoding, down to the tolerance thresholds, neighbour substitution and turn detection; key layout, radicals, candidate order including the Cantonese weighting, space committing the first candidate, the five-code ceiling, and the number row that becomes the candidate row once you start composing.",
+        "**Not in the demo**: two-finger chorded entry, learning, the other four input methods, and the `z` wildcard. When a stroke decodes to nothing the app runs a second, best-first rescue search; the demo does not, so a meaningless stroke is told it has no reading rather than given an invented one. The dictionary is also cut down to 3,030 common characters rather than the 27,584 the app bundles.",
     ],
 }
 

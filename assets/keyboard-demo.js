@@ -7,12 +7,15 @@
  *
  * It is a reduced copy of the shipping engine, not a reimplementation of it.
  * The radical mapping, the candidate ordering, the number-row-becomes-candidate
- * -row behaviour and the five-code ceiling all match the iOS keyboard. Glide,
- * chorded entry, learning, Tap Rescue and the other four input modes are not
- * here — the demo says so rather than pretending otherwise.
+ * -row behaviour, the five-code ceiling and — the point of the whole thing —
+ * glide decoding all match the iOS keyboard. Two-finger chorded entry, learning,
+ * Tap Rescue and the other four input modes are not here, and the demo says so
+ * rather than pretending otherwise.
  */
 
 import { RADICALS, TABLE } from "./cangjie-data.js";
+import { createPathSampler, decodeGlide } from "./glide-decoder.js";
+import { createGlideTrail } from "./glide-trail.js";
 
 const MAX_CODE_LENGTH = 5; // Cangjie never spells a character in more than five.
 const MAX_CANDIDATES = 9; // The bar shows what the 1-9 selection keys can reach.
@@ -34,6 +37,20 @@ for (const line of TABLE.split("\n")) {
     CODES.push(line.slice(0, space));
     CHARS.push(line.slice(space + 1));
   }
+}
+
+const EXACT = new Set(CODES);
+
+/** Does any dictionary entry start with this code? Prunes the glide search. */
+function hasPrefix(code) {
+  const index = lowerBound(code);
+  return index < CODES.length && CODES[index].startsWith(code);
+}
+
+/** The characters spelled by exactly this code, or "" if it is only a prefix. */
+function charactersFor(code) {
+  const index = lowerBound(code);
+  return index < CODES.length && CODES[index] === code ? CHARS[index] : "";
 }
 
 /** Index of the first code >= target. */
@@ -91,7 +108,7 @@ const ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 const STRINGS = {
   "zh-Hant": {
     space: "空格",
-    hint: "點按下方鍵盤，或直接使用電腦鍵盤輸入",
+    hint: "在鍵盤上滑行寫出整個編碼，或逐鍵點按；用電腦亦可直接按實體鍵盤",
     placeholder: "在此試打",
     cleared: "已清除",
     candidates: "候選字",
@@ -102,10 +119,11 @@ const STRINGS = {
     delete: "刪除",
     reset: "清除",
     committed: "已輸入",
+    noMatch: "這一筆沒有對應的候選字",
   },
   en: {
     space: "space",
-    hint: "Tap the keys, or type on your own keyboard",
+    hint: "Glide across the radicals in one stroke, or tap them one by one",
     placeholder: "Type here",
     cleared: "Cleared",
     candidates: "Candidates",
@@ -116,6 +134,7 @@ const STRINGS = {
     delete: "Delete",
     reset: "Clear",
     committed: "Entered",
+    noMatch: "That stroke has no reading",
   },
 };
 
@@ -132,6 +151,8 @@ class CangjieDemo {
     this.committed = "";
     this.code = "";
     this.candidates = [];
+    this.glideCandidates = null;
+    this.suppressClick = false;
     this.build();
     this.render();
   }
@@ -188,6 +209,119 @@ class CangjieDemo {
     this.surface.addEventListener("keydown", (event) => this.onKeyDown(event));
 
     this.root.append(this.surface, hint, this.live);
+    this.setupGlide();
+  }
+
+  /* ---- glide -----------------------------------------------------------
+   * The whole point of the keyboard: one stroke across the radicals instead of
+   * a tap per radical. Pointer events go on the key container rather than the
+   * keys, because a glide belongs to the path, not to whichever key happened to
+   * be under the finger when it started. The per-key click handlers stay for
+   * keyboard and assistive-technology users, suppressed for one event after a
+   * stroke so a glide does not also register as a tap on the key it ended on.
+   */
+
+  setupGlide() {
+    const canvas = document.createElement("canvas");
+    canvas.className = "kbd-trail";
+    canvas.setAttribute("aria-hidden", "true");
+    this.keys.append(canvas);
+    this.trail = createGlideTrail(canvas);
+
+    let sampler = null;
+
+    const localPoint = (event) => {
+      const bounds = this.keys.getBoundingClientRect();
+      return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    };
+
+    // Measured per stroke rather than cached: the keyboard is fluid, and a
+    // resize or an orientation change between strokes would invalidate it.
+    const keyFrames = () => {
+      const bounds = this.keys.getBoundingClientRect();
+      return [...this.keys.querySelectorAll("[data-letter]")].map((key) => {
+        const rect = key.getBoundingClientRect();
+        return {
+          letter: key.dataset.letter,
+          x: rect.left - bounds.left,
+          y: rect.top - bounds.top,
+          width: rect.width,
+          height: rect.height,
+        };
+      });
+    };
+
+    this.keys.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      sampler = createPathSampler(keyFrames());
+      const point = localPoint(event);
+      sampler.begin(point);
+      this.trail.push(point.x, point.y);
+      // Capture keeps the stroke alive when the finger leaves the keyboard, but
+      // it is not worth losing the stroke over: a pointer id the browser no
+      // longer considers active throws, and the glide works fine without it.
+      try {
+        this.keys.setPointerCapture(event.pointerId);
+      } catch {
+        /* not capturable — carry on */
+      }
+      this.surface.focus();
+    });
+
+    this.keys.addEventListener("pointermove", (event) => {
+      if (!sampler) return;
+      const point = localPoint(event);
+      sampler.move(point);
+      if (sampler.isGliding) this.trail.push(point.x, point.y);
+    });
+
+    const finish = () => {
+      if (!sampler) return;
+      const segments = sampler.end();
+      const glided = sampler.isGliding;
+      sampler = null;
+      this.trail.lift();
+      if (glided && segments.length) {
+        this.suppressClick = true;
+        this.applyGlide(segments);
+      }
+    };
+
+    this.keys.addEventListener("pointerup", finish);
+    this.keys.addEventListener("pointercancel", finish);
+  }
+
+  applyGlide(segments) {
+    const ranked = decodeGlide(segments, { isKnown: hasPrefix, isExact: (code) => EXACT.has(code) });
+
+    if (!ranked.length) {
+      // The device runs a best-first rescue search when the bounded one comes
+      // back empty; the demo does not carry it, so the honest answer here is
+      // that this stroke has no reading. Inventing one would be worse.
+      this.code = "";
+      this.glideCandidates = [];
+      this.announce(this.copy.noMatch);
+      this.render();
+      return;
+    }
+
+    // Every code the stroke could have meant contributes candidates, in rank
+    // order — the same thing the keyboard puts in front of you.
+    const seen = new Set();
+    const characters = [];
+    for (const entry of ranked) {
+      for (const character of charactersFor(entry.code)) {
+        if (seen.has(character)) continue;
+        seen.add(character);
+        characters.push(character);
+        if (characters.length === MAX_CANDIDATES) break;
+      }
+      if (characters.length === MAX_CANDIDATES) break;
+    }
+
+    this.code = ranked[0].code;
+    this.glideCandidates = characters;
+    this.render();
   }
 
   buildKeys() {
@@ -270,6 +404,11 @@ class CangjieDemo {
   /* ---- input handling --------------------------------------------------- */
 
   press(letter) {
+    if (this.suppressClick) {
+      this.suppressClick = false;
+      return;
+    }
+    this.glideCandidates = null;
     // z is inert: the shipping wildcard needs the full dictionary, and a key
     // that silently did nothing would read as a bug, so it is labelled instead.
     if (letter === "z") return;
@@ -279,12 +418,14 @@ class CangjieDemo {
   }
 
   backspace() {
+    this.glideCandidates = null;
     if (this.code) this.code = this.code.slice(0, -1);
     else this.committed = [...this.committed].slice(0, -1).join("");
     this.render();
   }
 
   insert(character) {
+    this.glideCandidates = null;
     this.committed += character;
     this.code = "";
     this.render();
@@ -333,7 +474,7 @@ class CangjieDemo {
   /* ---- rendering -------------------------------------------------------- */
 
   render() {
-    this.candidates = lookup(this.code);
+    this.candidates = this.glideCandidates || lookup(this.code);
     this.renderOutput();
     this.renderBar();
     this.reset.hidden = !this.committed && !this.code;
