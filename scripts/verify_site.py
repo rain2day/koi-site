@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from html.parser import HTMLParser
+from pathlib import PurePosixPath
 from pathlib import Path
+import posixpath
 import sys
 import xml.etree.ElementTree as ET
 
@@ -14,7 +16,19 @@ REQUIRED_HTML = {
     "terms/index.html": f"{ORIGIN}/terms/",
     "404.html": f"{ORIGIN}/404.html",
 }
-REQUIRED_NAV = {"/", "/privacy/", "/support/", "/terms/"}
+SITE_ROOTS = {
+    "index.html": "./",
+    "privacy/index.html": "../",
+    "support/index.html": "../",
+    "terms/index.html": "../",
+    "404.html": "./",
+}
+NAVIGATION_TARGETS = {
+    "": "index.html",
+    "privacy/": "privacy/index.html",
+    "support/": "support/index.html",
+    "terms/": "terms/index.html",
+}
 FORBIDDEN = ("http://", "google-analytics", "googletagmanager", "<iframe", "<form")
 
 
@@ -23,6 +37,7 @@ class PageParser(HTMLParser):
         super().__init__()
         self.canonical: str | None = None
         self.links: set[str] = set()
+        self.stylesheets: set[str] = set()
         self.has_main = False
         self.has_h1 = False
 
@@ -30,10 +45,22 @@ class PageParser(HTMLParser):
         values = dict(attrs)
         if tag == "link" and values.get("rel") == "canonical":
             self.canonical = values.get("href")
+        if tag == "link" and values.get("rel") == "stylesheet" and values.get("href"):
+            self.stylesheets.add(values["href"] or "")
         if tag == "a" and values.get("href"):
             self.links.add(values["href"] or "")
         self.has_main = self.has_main or tag == "main"
         self.has_h1 = self.has_h1 or tag == "h1"
+
+
+def resolve_relative_reference(page: str, reference: str) -> str:
+    """Resolve a site-local link against its generated document path."""
+    assert not reference.startswith("/"), reference
+    base = PurePosixPath(page).parent
+    resolved = PurePosixPath(posixpath.normpath(str(base / reference)))
+    if reference.endswith("/") or reference in {".", ".."}:
+        resolved /= "index.html"
+    return str(resolved)
 
 
 def verify(root: Path) -> None:
@@ -47,7 +74,15 @@ def verify(root: Path) -> None:
         parser.feed(source)
         assert parser.canonical == canonical, (relative, parser.canonical)
         assert parser.has_main and parser.has_h1, relative
-        assert REQUIRED_NAV.issubset(parser.links), (relative, parser.links)
+        site_root = SITE_ROOTS[relative]
+        expected_nav = {
+            f"{site_root}{suffix}": target for suffix, target in NAVIGATION_TARGETS.items()
+        }
+        assert parser.stylesheets == {f"{site_root}assets/site.css"}, (relative, parser.stylesheets)
+        assert set(expected_nav).issubset(parser.links), (relative, parser.links)
+        for reference, target in expected_nav.items():
+            assert resolve_relative_reference(relative, reference) == target, (relative, reference)
+        assert all(not reference.startswith("/") for reference in parser.links), (relative, parser.links)
     sitemap = ET.parse(root / "sitemap.xml")
     locations = {
         node.text for node in sitemap.findall("{http://www.sitemaps.org/schemas/sitemap/0.9}url/{http://www.sitemaps.org/schemas/sitemap/0.9}loc")

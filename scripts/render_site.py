@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 PAGES = {
     "index.html": {
+        "site_root": "./",
         "title": "KOI Keyboard",
         "description": "KOI Keyboard official product website.",
         "canonical": f"{ORIGIN}/",
@@ -17,13 +18,14 @@ PAGES = {
         "body": dedent("""
             <p class="lede">KOI Keyboard 官方網站基礎已經就緒。產品介紹與完整圖片正在準備中。</p>
             <section class="grid" aria-label="Website sections">
-              <article class="card"><h2>Privacy</h2><p>了解 KOI 的私隱政策頁面狀態。</p><a href="/privacy/">查看 Privacy</a></article>
-              <article class="card"><h2>Support</h2><p>取得 KOI 支援及聯絡資料。</p><a href="/support/">查看 Support</a></article>
+              <article class="card"><h2>Privacy</h2><p>了解 KOI 的私隱政策頁面狀態。</p><a href="{site_root}privacy/">查看 Privacy</a></article>
+              <article class="card"><h2>Support</h2><p>取得 KOI 支援及聯絡資料。</p><a href="{site_root}support/">查看 Support</a></article>
             </section>
             <p class="notice">This is the official technical base for KOI Keyboard. Final product content is being prepared.</p>
         """).strip(),
     },
     "privacy/index.html": {
+        "site_root": "../",
         "title": "KOI Keyboard Privacy",
         "description": "Privacy information for KOI Keyboard.",
         "canonical": f"{ORIGIN}/privacy/",
@@ -35,6 +37,7 @@ PAGES = {
         """).strip(),
     },
     "support/index.html": {
+        "site_root": "../",
         "title": "KOI Keyboard Support",
         "description": "Support and contact information for KOI Keyboard.",
         "canonical": f"{ORIGIN}/support/",
@@ -46,6 +49,7 @@ PAGES = {
         """).strip(),
     },
     "terms/index.html": {
+        "site_root": "../",
         "title": "KOI Keyboard Terms",
         "description": "Terms information for KOI Keyboard.",
         "canonical": f"{ORIGIN}/terms/",
@@ -57,12 +61,13 @@ PAGES = {
         """).strip(),
     },
     "404.html": {
+        "site_root": "./",
         "title": "KOI Keyboard — Page Not Found",
         "description": "The requested KOI Keyboard page was not found.",
         "canonical": f"{ORIGIN}/404.html",
         "eyebrow": "KOI · 404",
         "heading": "找不到頁面",
-        "body": '<p class="lede">你要求的頁面不存在或已經移動。</p><p><a href="/">返回 KOI 首頁</a></p>',
+        "body": '<p class="lede">你要求的頁面不存在或已經移動。</p><p><a href="{site_root}">返回 KOI 首頁</a></p>',
     },
 }
 
@@ -78,16 +83,16 @@ TEMPLATE = dedent("""\
       <meta property="og:title" content="{title}">
       <meta property="og:url" content="{canonical}">
       <meta property="og:type" content="website">
-      <link rel="stylesheet" href="/assets/site.css">
+      <link rel="stylesheet" href="{site_root}assets/site.css">
     </head>
     <body>
-      <header><nav class="shell" aria-label="Primary"><a class="brand" href="/">KOI</a><div class="nav-links"><a href="/">首頁</a><a href="/privacy/">Privacy</a><a href="/support/">Support</a><a href="/terms/">Terms</a></div></nav></header>
+      <header><nav class="shell" aria-label="Primary"><a class="brand" href="{site_root}">KOI</a><div class="nav-links"><a href="{site_root}">首頁</a><a href="{site_root}privacy/">Privacy</a><a href="{site_root}support/">Support</a><a href="{site_root}terms/">Terms</a></div></nav></header>
       <main class="shell">
         <p class="eyebrow">{eyebrow}</p>
         <h1>{heading}</h1>
         {body}
       </main>
-      <footer><div class="shell"><span>© 2026 RaIN</span><span><a href="/privacy/">Privacy</a> · <a href="/support/">Support</a> · <a href="/terms/">Terms</a></span></div></footer>
+      <footer><div class="shell"><span>© 2026 RaIN</span><span><a href="{site_root}privacy/">Privacy</a> · <a href="{site_root}support/">Support</a> · <a href="{site_root}terms/">Terms</a></span></div></footer>
     </body>
     </html>
 """)
@@ -95,6 +100,7 @@ TEMPLATE = dedent("""\
 for relative, page in PAGES.items():
     destination = ROOT / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(TEMPLATE.format(**page), encoding="utf-8")
+    rendered = {**page, "body": page["body"].format(site_root=page["site_root"])}
+    destination.write_text(TEMPLATE.format(**rendered), encoding="utf-8")
 
 print(f"Rendered {len(PAGES)} KOI site pages")
