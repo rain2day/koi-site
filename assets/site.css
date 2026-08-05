@@ -293,6 +293,15 @@ h1 {
 }
 .hero-landing h1 { max-width: 15ch; }
 
+/* The Chinese headline is ten characters. Left to wrap, `balance` splits it
+   5 + 5 and strands 的 at the head of the second line, which Chinese
+   typography does not do. Sized so the line fits whole at every width
+   instead. English keeps its measure. */
+html[lang="zh-Hant"] .hero-landing h1 {
+  max-width: none;
+  font-size: clamp(2rem, 6.4vw, 5rem);
+}
+
 .lede {
   max-width: 54ch;
   margin: 0 0 0.9rem;
