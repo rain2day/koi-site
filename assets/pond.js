@@ -422,6 +422,14 @@ export function createPond(canvas, options = {}) {
   };
   window.addEventListener("resize", onResize);
 
+  /* `resize()` gives up when the element measures zero, which is the right call
+     — a zero-sized render target is invalid. But a window resize is not the only
+     way an element gains size: it can be laid out late, revealed from a hidden
+     ancestor, or start life in a document that has no viewport yet. Without this
+     the canvas would stay stuck at its 300x150 default forever. */
+  const sizeObserver = new ResizeObserver(onResize);
+  sizeObserver.observe(canvas);
+
   const onVisibility = () => {
     visible = document.visibilityState === "visible";
     visible ? start() : stop();
@@ -462,6 +470,7 @@ export function createPond(canvas, options = {}) {
     destroy() {
       stop();
       observer.disconnect();
+      sizeObserver.disconnect();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointer);
       document.removeEventListener("visibilitychange", onVisibility);
