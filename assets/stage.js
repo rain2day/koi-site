@@ -72,9 +72,11 @@ function wireInk() {
  */
 
 function wireFilm() {
-  const film = document.querySelector("[data-koi-film]");
-  if (!film || reduceMotion.matches) return;
+  if (reduceMotion.matches) return;
+  document.querySelectorAll("[data-koi-film]").forEach(startFilm);
+}
 
+function startFilm(film) {
   film.controls = false;
 
   // Nothing is fetched until the film is nearly on screen, and it stops again

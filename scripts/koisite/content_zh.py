@@ -101,6 +101,25 @@ FILM = {
 }
 
 
+AGENT_FILM = {
+    "kind": "film",
+    "id": "agent-film",
+    "heading": "看它草擬一句",
+    "intro": [
+        "訊息進來，選「回覆」，草稿即場出現，插入就等於送出。想要一張貼圖就選「貼圖」——透明背景，可以直接貼進對話。Credits 按實際操作扣減：回覆 1，貼圖 6。",
+    ],
+    "sources": (
+        {"source": "film/agent-zh.webm", "type": "video/webm"},
+        {"source": "film/agent-zh.mp4", "type": "video/mp4"},
+    ),
+    "poster": "film/agent-zh-poster.jpg",
+    "width": 1280,
+    "height": 860,
+    "alt": "KOI Agent 草擬一句回覆並插入對話，然後生成一張透明背景的錦鯉貼圖，Credits 由 250 減至 243",
+    "caption": "示範的是操作流程與扣數。實際回覆的措辭由模型生成，會隨對話而不同；片中的貼圖是為此片繪製的，並非模型輸出。",
+}
+
+
 LANDING = {
     "title": "KOI Keyboard — 為香港而設的中文鍵盤",
     "description": "倉頡、速成、筆劃、粵拼、注音，五種輸入方式共用一個鍵盤。手寫離線辨識，打字引擎完全不連網。iOS 16 或以上適用。",
@@ -200,6 +219,7 @@ LANDING = {
             ],
             "aside": "只有在你主動要求時才會扣減 Credits；日常打字、候選字與手寫辨識完全不需要。每項操作的消耗見[支援頁](route:support/)。",
         },
+        AGENT_FILM,
         {
             "kind": "scene",
             "id": "privacy",
