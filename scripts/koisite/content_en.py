@@ -14,6 +14,7 @@ Internal links carry the ``en/`` prefix because ``RenderContext.href`` resolves 
 from __future__ import annotations
 
 EFFECTIVE_DATE = "5 August 2026"
+PRIVACY_EFFECTIVE_DATE = "20 September 2026"
 APPLE_EULA = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
 
 UI = {
@@ -266,7 +267,7 @@ LANDING = {
             "heading": "Getting started",
             "lead": "You add the keyboard in iOS Settings, once. KOI needs iOS 16.0 or later.",
             "points": [
-                {"title": "Full Access", "body": "Needed only for the AI features and pasting from the clipboard. Without it, all five input methods, candidates, learning and handwriting keep working."},
+                {"title": "Full Access", "body": "Needed for AI, clipboard paste, handwriting-model updates, and shared image-library archiving. Without it, all five input methods, candidates, learning and handwriting keep working."},
                 {"title": "Character coverage", "body": "Candidates cover the Han characters in the Basic Multilingual Plane (BMP)."},
                 {"title": "Interface language", "body": "The app interface is in Traditional Chinese (Hong Kong)."},
             ],
@@ -282,7 +283,7 @@ PRIVACY = {
     "eyebrow": "KOI · Privacy",
     "heading": "Privacy Policy",
     "lede": "This policy describes what KOI Keyboard actually does with data. Every point matches the implementation in the app and the backend; none of it is filled-in boilerplate.",
-    "updated": f"Effective date: {EFFECTIVE_DATE}",
+    "updated": f"Effective date: {PRIVACY_EFFECTIVE_DATE}",
     "toc": True,
     "sections": [
         {
@@ -309,7 +310,7 @@ PRIVACY = {
                 "Advertising or attribution SDKs (AppsFlyer, Adjust, the Facebook SDK and the like)",
                 "The advertising identifier (IDFA), the vendor identifier (IDFV) or App Tracking Transparency (ATT) prompts",
                 "Keystroke logging — KOI does not record the keys you press",
-                "Access to contacts, the photo library, location or calendars",
+                "Browsing or reading contacts, the photo library, location or calendars — KOI cannot browse or read your photo library",
             ],
         },
         {
@@ -327,15 +328,16 @@ PRIVACY = {
             "id": "full-access",
             "heading": "The “Full Access” permission",
             "body": [
-                "iOS rules: a keyboard extension without “Allow Full Access” has no networking capability at all. KOI needs the permission for three things:",
+                "iOS rules: a keyboard extension without “Allow Full Access” has no networking capability and cannot use KOI's shared container. KOI uses the permission for these explicit features:",
             ],
             "bullets": [
                 "Connecting to KOI Agent (the AI features)",
                 "Pasting text from the clipboard into the AI input field — the clipboard is read only at the moment you press Paste",
                 "Updating the handwriting recognition model (the base model is built in and works without updates)",
+                "Saving generated images into KOI's shared local image library so the host app can show them later",
             ],
             "after": [
-                "Without the permission, KOI's five input methods, candidates, learning, handwriting, symbols and cursor controls all keep working. The three items above are the only things you lose.",
+                "Without the permission, KOI's five input methods, candidates, learning, handwriting, symbols and cursor controls all keep working. The features above are the only things you lose.",
                 "Granting the permission **does not** itself send any data. Data is sent only when you use the relevant feature.",
             ],
         },
@@ -348,12 +350,15 @@ PRIVACY = {
             ],
             "bullets": [
                 "The instruction text you entered",
-                "The text surrounding the cursor in the field you are typing in, **up to 2,000 UTF-16 units** — not the whole document, just a window around the cursor",
+                "Context from the active field. KOI allocates the limit in this order: selected text, text before the selection or cursor, then text after it.",
+                "The combined context is limited to 2,000 Unicode scalar values and 4,000 UTF-8 bytes. The preview shown in KOI Agent is exactly the context sent with that action.",
                 "The earlier turns of the same conversation",
                 "An installation identifier (see “Accounts and identifiers” below) and a Firebase App Check attestation token",
             ],
             "after": [
-                "**Not** sent: screenshots (KOI cannot take them), your clipboard contents (unless you press Paste yourself), your contacts, or content from other apps.",
+                "KOI sends context only after you explicitly press an Agent action — for example Send, a quick action, Retry, Continue, or Freedom Create. Opening Agent or viewing the preview does not send it.",
+                "**Not** sent: screenshots (KOI cannot take them), your clipboard contents (unless you press Paste yourself), your contacts, or content outside the text field currently being edited.",
+                "KOI cannot browse or read your photo library. The KOI app can only use add-only permission after you tap Save to Photos; it cannot inspect existing photos.",
                 "Server logs keep request-level data only: request id, path, status code, duration, which model handled it, and processing stage. **The instruction text and the surrounding text are never written to logs.**",
             ],
         },
@@ -368,6 +373,8 @@ PRIVACY = {
                 ("Firebase App Check (via Apple DeviceCheck)", "Preventing abuse of the servers", "A device attestation token"),
                 ("Firebase Authentication", "Optional Sign in with Apple", "See “Accounts and identifiers”"),
                 ("Firebase Cloud Functions / Firestore", "AI request handling, Credit accounting", "See “KOI Agent” and “Purchases”"),
+                ("Cloudflare Workers", "Authentication and relay for Life Time Plus AI Chinese correction requests", "The original sentence, local candidates and membership credentials; text is not written to KOI Worker logs or cache"),
+                ("TypeSafe Jev", "Semantic candidate selection for Life Time Plus AI Chinese correction", "The original sentence and candidates generated locally from the input code"),
                 ("RevenueCat", "Subscription and purchase state", "See “Purchases”"),
                 ("OpenRouter", "Routing AI requests to model providers", "Your instruction and the surrounding text"),
                 ("Anthropic", "Text models (Claude)", "Your instruction and the surrounding text"),
@@ -393,7 +400,8 @@ PRIVACY = {
             "heading": "Accounts and identifiers",
             "body": [
                 "**Installation identifier**: KOI generates a random UUID to identify an installation. It is not a device identifier, it does not track you across apps, and reinstalling the app replaces it. On arrival the server hashes it with SHA-256 and a secret pepper, and only the hash is used, for rate limiting and for tying purchases to an installation.",
-                "**Sign in with Apple**: optional, and needed only if you want purchase records to carry across devices. The only scope KOI requests from Apple is **your name**; it does not request an email address. The account record on the server holds a random scoped hash and a timestamp — no name, no email.",
+                "**Sign in with Apple**: optional, and needed only if you want purchase records to carry across devices. The only scope KOI requests from Apple is **your name**; it does not request an email address. Apple supplies the name only on first authorization; KOI passes it to Firebase Authentication to create or update the sign-in account. KOI's own Firestore account and purchase records store the Firebase UID, scoped hashes, purchase data and timestamps, and do not separately store your name or email.",
+                "**AI Chinese correction**: this experimental feature is currently limited to Life Time Plus. The keyboard sends the current complete sentence and a bounded set of candidates generated locally from the input code through Cloudflare Workers to TypeSafe Jev for semantic selection. Cloudflare's membership cache stores only a hashed membership decision for up to 60 seconds and contains no input text; KOI's Worker does not write sentences to logs or persistent storage. TypeSafe Jev handles data under its own privacy policy and terms.",
                 "The backend database (Firestore) rejects all direct client reads and writes; every write goes through server code.",
             ],
         },
@@ -477,7 +485,7 @@ SUPPORT = {
                 },
                 {
                     "title": "(Optional) Turn on Full Access",
-                    "body": "On the same screen, select KOI and turn on “Allow Full Access”. It is needed only for the AI features and pasting from the clipboard; without it the input method itself is completely normal.",
+                    "body": "On the same screen, select KOI and turn on “Allow Full Access”. It is needed for AI, clipboard paste, handwriting-model updates, and shared image-library archiving; without it the input method itself is completely normal.",
                 },
                 {
                     "title": "Switch to KOI",
@@ -493,15 +501,15 @@ SUPPORT = {
                 {
                     "question": "Why does KOI need “Full Access”? Can I leave it off?",
                     "answer": [
-                        "iOS gives a third-party keyboard no networking capability at all without this permission. KOI needs it to connect to the AI features, to read the clipboard (only at the moment you press Paste) and to update the handwriting model.",
-                        "Leaving it off is completely fine. The five input methods, candidates, learning, handwriting, symbols and cursor controls all still work. The only things you lose are the AI and paste.",
+                        "iOS gives a third-party keyboard no networking capability at all without this permission. KOI needs it to connect to the AI features, to read the clipboard (only at the moment you press Paste), to update the handwriting model, and to archive generated images in the app's shared image library.",
+                        "Leaving it off is completely fine. The five input methods, candidates, learning, handwriting, symbols and cursor controls all still work. What you lose is AI access, paste, handwriting-model updates, and shared image-library archiving.",
                     ],
                 },
                 {
                     "question": "Does what I type get sent anywhere?",
                     "answer": [
                         "No. The input engine runs entirely on the device, and that part of the code has no networking capability.",
-                        "The one exception is when you open KOI Agent yourself and send a request: that sends your instruction and up to 2,000 UTF-16 units of text around the cursor. See the [privacy policy](route:privacy/) for details.",
+                        "The one exception is when you open KOI Agent yourself and explicitly choose an action: that sends your instruction plus the exact previewed selection/before/after context, capped at 2,000 Unicode scalar values and 4,000 UTF-8 bytes. See the [privacy policy](route:privacy/) for details.",
                     ],
                 },
                 {
@@ -603,7 +611,7 @@ SUPPORT = {
                 {"term": "iOS version", "detail": "iOS 16.0 or later."},
                 {
                     "term": "Full Access",
-                    "detail": "The AI features and pasting from the clipboard need “Allow Full Access”. Without it, all five input methods, candidates, learning and handwriting keep working exactly as before.",
+                    "detail": "AI, clipboard paste, handwriting-model updates, and shared image-library archiving need “Allow Full Access”. Without it, all five input methods, candidates, learning and handwriting keep working exactly as before.",
                 },
                 {
                     "term": "Character coverage",
