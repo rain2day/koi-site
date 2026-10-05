@@ -1239,3 +1239,85 @@ footer {
   .contents { margin-top: 1.4rem; }
   section { page-break-inside: avoid; }
 }
+
+/* Product and support refresh, October 2026. Reuses the local brand palette. */
+.hero-landing { display: grid; grid-template-columns: 1.07fr 1fr; gap: 4rem; align-items: center; max-width: none; padding-bottom: 4.5rem; }
+.hero-landing h1 { font-size: clamp(3rem, 5.1vw, 4.9rem); max-width: 12ch; line-height: 1.06; }
+html[lang="zh-Hant"] .hero-landing h1 { font-size: clamp(2.5rem, 4.7vw, 4.2rem); max-width: 8ch; line-height: 1.19; letter-spacing: -.045em; }
+.hero-landing .lede { font-size: 1.08rem; line-height: 1.75; max-width: 38ch; }
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; margin-top: 1.8rem; }
+.hero-actions a { font-size: .95rem; font-weight: 650; text-decoration: none; transition: background .2s var(--ease), transform .2s var(--ease); }
+.action-primary { background: var(--koi); color: #1a0b08; border-radius: 10px; padding: .85rem 1.3rem; }
+.action-primary:hover { background: var(--koi-lift); color: #1a0b08; }
+.hero-actions a:active { transform: translateY(1px); }
+.action-link { color: var(--text); padding-block: .75rem; border-bottom: 1px solid var(--line-strong); }
+.hero-highlights { padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; margin: 2rem 0 0; font-size: .77rem; color: var(--muted); }
+.hero-highlights li { padding-left: .8rem; position: relative; }
+.hero-highlights li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--koi-lift); position: absolute; left: 0; top: .65em; }
+.status { border: 0; border-radius: 0; background: none; padding: 0; margin-top: 1rem; font-size: .78rem; gap: .75rem; }
+.status-label { color: var(--muted); font-weight: 500; }
+.status-detail { color: var(--dim); border-left: 1px solid var(--line-strong); padding-left: .75rem; }
+.hero-visual { margin: 0; min-width: 0; position: relative; }
+.hero-visual::before { content: ''; position: absolute; inset: -28%; pointer-events: none; background: radial-gradient(ellipse, rgba(93,217,200,.09), transparent 66%); }
+.visual-keyboard { background: #10141c; border: 1px solid rgba(255,255,255,.16); border-radius: 24px; padding: 1.3rem .85rem 1rem; box-shadow: 0 28px 70px rgba(3,9,15,.65), inset 0 1px 0 rgba(255,255,255,.08); transform: rotate(-3deg); position: relative; }
+.visual-composition { display: flex; align-items: center; gap: 1.4rem; padding: 0 .65rem 1.2rem; font-size: 1.1rem; }
+.visual-composition span:first-child { font-family: var(--mono); color: var(--muted); margin-right: auto; font-size: .85rem; }
+.visual-composition strong { color: var(--koi-lift); font-size: 1.6rem; }
+.visual-composition span:last-child { color: var(--muted); }
+.visual-keys { display: grid; gap: 6px; }
+.visual-row { display: flex; gap: 5px; justify-content: center; }
+.visual-key { flex: 1; min-width: 0; aspect-ratio: .8; display: grid; place-items: center; font-size: 1.15rem; background: #242b35; border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255,255,255,.08); position: relative; }
+.visual-key small { position: absolute; top: 3px; left: 5px; font-size: .56rem; color: #aeb8c8; font-family: var(--mono); }
+.visual-row:nth-child(2) { padding-inline: 4%; }
+.visual-row:nth-child(3) { padding-inline: 11%; }
+.visual-row:nth-child(2) .visual-key:nth-child(1), .visual-row:nth-child(2) .visual-key:nth-child(3), .visual-row:nth-child(2) .visual-key:nth-child(6) { color: var(--koi-lift); background: #3b2625; }
+.visual-controls { display: grid; grid-template-columns: 1fr 4fr 1fr; gap: 6px; margin-top: 7px; text-align: center; color: var(--muted); font-size: .8rem; }
+.visual-controls span { background: #242b35; border-radius: 6px; padding: .6rem; }
+.hero-visual figcaption { display: grid; gap: .25rem; padding-top: 2rem; text-align: center; position: relative; }
+.hero-visual figcaption strong { color: var(--text); font-size: .92rem; font-weight: 500; }
+.hero-visual figcaption span { color: var(--dim); font-size: .7rem; }
+.scene { padding-block: clamp(3rem, 7vw, 5rem); }
+.scene-inner { max-width: none; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); column-gap: 5rem; }
+.scene-index, .scene h2, .scene-lead { grid-column: 1; }
+.scene-index { margin-bottom: 1rem; }
+.scene h2 { font-size: clamp(1.8rem, 3.5vw, 2.7rem); line-height: 1.22; }
+.scene-lead { font-size: 1.04rem; max-width: 40ch; line-height: 1.75; }
+.scene-points { grid-column: 2; grid-row: 1 / span 4; margin: 0; gap: .5rem; }
+.scene-points li { grid-template-columns: 6.5rem minmax(0, 1fr); gap: 1rem; font-size: .92rem; padding-block: .8rem; }
+.scene-points li:first-child { border-top: 0; padding-top: 0; }
+.scene-aside { grid-column: 1 / -1; max-width: none; margin-top: 1.4rem; font-size: .85rem; }
+.scene-accent { padding: 3rem 2rem; margin-block: 2rem; }
+.scene-quiet .scene-lead { font-size: 1.04rem; }
+body:has(.hero-page) .hero-actions { margin-top: 1.4rem; }
+body:has(.hero-page) .updated { margin-top: 1.3rem; }
+@media (max-width: 900px) {
+ .hero-landing { gap: 2rem; }
+ .scene-inner { column-gap: 2.5rem; }
+ .scene-points li { grid-template-columns: 1fr; gap: .3rem; }
+ .visual-key { font-size: .95rem; }
+}
+@media (max-width: 680px) {
+ main { padding-top: 2.5rem; }
+ header nav { flex-direction: row; align-items: center; gap: .5rem; padding-block: .85rem; }
+ .nav-links { width: 100%; justify-content: space-between; gap: .4rem; font-size: .78rem; }
+ .lang-switch { padding: .3rem .55rem; font-size: .75rem; }
+ .hero-landing { grid-template-columns: 1fr; gap: 2.5rem; padding-bottom: 3rem; }
+ .hero-landing h1 { font-size: 3rem; max-width: 13ch; }
+ html[lang="zh-Hant"] .hero-landing h1 { font-size: clamp(2.4rem, 10vw, 3.5rem); max-width: 9ch; }
+ .hero-landing .lede { font-size: 1rem; }
+ .hero-highlights { margin-top: 1.5rem; font-size: .73rem; gap: .5rem .85rem; }
+ .hero-visual { margin-inline: .5rem; }
+ .visual-keyboard { transform: rotate(-2deg); padding: 1.1rem .7rem .85rem; border-radius: 20px; }
+ .visual-key { font-size: 1rem; }
+ .hero-visual figcaption { padding-top: 1.6rem; }
+ .scene-inner { display: block; }
+ .scene-points { margin-top: 1.5rem; }
+ .scene-points li { grid-template-columns: 6.5rem minmax(0,1fr); }
+ .scene h2 { font-size: 1.9rem; }
+ .scene-accent { padding: 2rem 1.2rem; }
+ .hero-page h1 { font-size: 2.55rem; line-height: 1.2; }
+ .hero-actions { gap: 1rem; }
+ .hero-actions a { font-size: .9rem; }
+}
+body:has(.hero-landing)::after { display: none; }
+.hero-visual::before { inset: -28% 0; }

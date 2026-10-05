@@ -261,7 +261,10 @@ class CangjieDemo {
       // it is not worth losing the stroke over: a pointer id the browser no
       // longer considers active throws, and the glide works fine without it.
       try {
-        this.keys.setPointerCapture(event.pointerId);
+        // Keep a tap's click targeted at its key. Capturing on the container
+        // retargets the click and bypasses the per-key and special-key handlers.
+        const captureTarget = event.target.closest(".kbd-key") || this.keys;
+        captureTarget.setPointerCapture(event.pointerId);
       } catch {
         /* not capturable — carry on */
       }

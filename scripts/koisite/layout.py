@@ -153,17 +153,40 @@ def _hero(page: dict, context: RenderContext) -> str:
     if lede:
         values = [lede] if isinstance(lede, str) else lede
         parts += [f'<p class="lede">{escape(value)}</p>' for value in values]
+    if page.get("actions"):
+        actions = []
+        for action in page["actions"]:
+            css = "action-primary" if action.get("primary") else "action-link"
+            href = escape(context.href(action["href"]), quote=True)
+            actions.append(f'<a class="{css}" href="{href}">{escape(action["label"])}</a>')
+        parts.append(f'<div class="hero-actions">{"".join(actions)}</div>')
+    if page.get("highlights"):
+        items = "".join(f'<li>{escape(value)}</li>' for value in page["highlights"])
+        parts.append(f'<ul class="hero-highlights">{items}</ul>')
     status = page.get("status")
     if status:
-        parts.append(
-            f'<p class="status"><span class="status-dot" aria-hidden="true"></span>'
-            f'<span class="status-label">{escape(status["label"])}</span>'
-            f'<span class="status-detail">{escape(status["detail"])}</span></p>'
-        )
+        parts.append(f'<p class="status"><span class="status-label">{escape(status["label"])}</span>'
+                     f'<span class="status-detail">{escape(status["detail"])}</span></p>')
     if page.get("updated"):
         parts.append(f'<p class="updated">{escape(page["updated"])}</p>')
     variant = page.get("hero", "page")
-    return f'<div class="hero hero-{variant}">{"".join(parts)}</div>'
+    visual = ""
+    if page.get("visual_label"):
+        rows = []
+        for letters, radicals in (("qwertyuiop", "手田水口廿卜山戈人心"),
+                                  ("asdfghjkl", "日尸木火土竹十大中"),
+                                  ("zxcvbnm", "＊難金女月弓一")):
+            keys = "".join(f'<span class="visual-key"><small>{letter}</small>{radical}</span>'
+                           for letter, radical in zip(letters, radicals))
+            rows.append(f'<div class="visual-row">{keys}</div>')
+        visual = (f'<figure class="hero-visual"><div class="visual-keyboard" role="img" '
+                  f'aria-label="{escape(page["visual_label"], quote=True)}">'
+                  '<div class="visual-composition"><span>h d a</span><strong>香</strong><span>香港</span></div>'
+                  f'<div class="visual-keys" aria-hidden="true">{"".join(rows)}</div>'
+                  '<div class="visual-controls" aria-hidden="true"><span>🌐</span><span>空白</span><span>↵</span></div></div>'
+                  f'<figcaption><strong>{escape(page["visual_caption"])}</strong>'
+                  f'<span>{escape(page["visual_note"])}</span></figcaption></figure>')
+    return f'<div class="hero hero-{variant}"><div class="hero-copy">{"".join(parts)}</div>{visual}</div>'
 
 
 def _footer(ui: dict, locale: Locale, context: RenderContext) -> str:
